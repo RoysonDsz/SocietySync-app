@@ -8,7 +8,7 @@ export const createParking = async (req, res) => {
             residentName,
             residentNumber,
             slotNumber,
-            status : "Occupied"
+            status: "Occupied"
         });
         const savedParking = await newParking.save();
         res.status(201).json(savedParking);

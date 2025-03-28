@@ -29,7 +29,7 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).send({ error: 'Invalid email or password' });
     }
-    const token = jwt.sign({ id: user._id, email: user.email }, secretKey, { expiresIn: '24h' });
+    const token = jwt.sign({ id: user._id, email: user.email }, secretKey, { expiresIn: '7d' });
     res.status(200).send({ user, token });
   } catch (error) {
     res.status(400).send({ error: error.message });
@@ -227,6 +227,29 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const getOwnProfile = async(req, res) =>{
+  const token = req.headers.authorization?.split(" ")[1];
+  if(!token){
+    return res.status(404).json({
+      success: false,
+      message: "Invalid token"
+    })
+  }
+  try {
+    const { id } = jwt.verify(token, secretKey);
+    const response = await signupModel.findById(id);
+    res.status(200).json({
+      success: true,
+      message: "User profile",
+      response
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    })
+  }
+}
 
-export { allUsers, changePassword, forgotPassword, getUserById, login, resetPassword, signup, updateProfile, userProfile, verifyOTP };
+export { allUsers, changePassword, getOwnProfile, forgotPassword, getUserById, login, resetPassword, signup, updateProfile, userProfile, verifyOTP };
 

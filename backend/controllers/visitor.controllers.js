@@ -1,27 +1,22 @@
 import 'dotenv/config';
-import visitorModel from '../models/visitor.model.js';
+import visitorAlert from '../models/visitorAlert.model.js';
 
 const JWT = process.env.JWT_SECRET;
 
 const createVisitor = async(req, res) =>{
     try {
-        const { visitorName, residentName, relation, flatNumber, visitorPhoneNumber, visitorVehicleNumber, purpose, checkIn, checkOut } = req.body;
-        if(!visitorName || !residentName || !relation || !flatNumber || !visitorPhoneNumber || !visitorVehicleNumber || !purpose){
+        const { visitorName, flatNumber, visitorPhoneNumber, purpose, } = req.body;
+        if(!visitorName || !flatNumber || !visitorPhoneNumber ||!purpose){
             return res.status(400).json({
                 success: false,
                 message: "Please enter all the details"
             })
         }
-        const response = new visitorModel({
-            visitorName, 
-            residentName, 
-            relation, 
+        const response = new visitorAlert({
+            visitorName,
             flatNumber, 
-            visitorPhoneNumber, 
-            visitorVehicleNumber, 
-            purpose,
-            checkIn,
-            checkOut
+            visitorPhoneNumber,  
+            purpose
         });
         await response.save();
         res.status(201).json({
@@ -39,7 +34,7 @@ const createVisitor = async(req, res) =>{
 
 const getAllVisitor = async(req, res) =>{
     try {
-        const response = await visitorModel.find().sort({ createdAt : -1 });
+        const response = await visitorAlert.find().sort({ createdAt : -1 });
         if(!response){
             return res.status(404).json({
                 success: false,
@@ -63,7 +58,7 @@ const getAllVisitor = async(req, res) =>{
 const getVisitorById = async(req, res) =>{
     const { id } = req.params
     try {
-        const response = await visitorModel.findById(id);
+        const response = await visitorAlert.findById(id);
         if(!response){
             return res.status(404).json({
                 success: false,
@@ -87,7 +82,7 @@ const getVisitorById = async(req, res) =>{
 const deleteVisitor = async(req, res) =>{
     const { id } = req.params;
     try {
-        const response = await visitorModel.findByIdAndDelete(id);
+        const response = await visitorAlert.findByIdAndDelete(id);
         if(!response){
             return res.status(404).json({
                 success: false,

@@ -10,7 +10,7 @@ import NotificationRouter from './routes/notification.route.js';
 import parkingRouter from './routes/parking.route.js';
 import signupRouter from './routes/signup.route.js';
 import visitorRouter from './routes/visitor.route.js';
-// import visitorRoutes from './routes/visitorRoutes.js';
+import alertRouter from './routes/visitorAlert.route.js';
 
 const app = express();
 app.use(cors());
@@ -25,6 +25,7 @@ app.use('/api/event', eventRouter);
 app.use('/api/parking', parkingRouter);
 app.use('/api/building', buildingRouter);
 app.use('/api/assign', assignRouter);
+app.use('/api/alert', alertRouter);
 
 app.listen(5050, '0.0.0.0',()=>{
     console.log(`Server running on port 5050`)

@@ -23,8 +23,8 @@ const parkingSchema = new mongoose.Schema({
         required: true ,
         default: 'Available'
     },
-  }, { timestamps: true });
+}, { timestamps: true });
 
-  const parkingModel = mongoose.model('Parking', parkingSchema);
+const parkingModel = mongoose.model('Parking', parkingSchema);
 
-  export default parkingModel;
+export default parkingModel
