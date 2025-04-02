@@ -5,7 +5,7 @@ import {
   RefreshControl, SafeAreaView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import axios from 'axios';
 // Types
 interface EventData {
   id?: string;
@@ -49,43 +49,43 @@ const EventManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'declined'>('all');
-
+  const [mockBookings, setMockBookings] = useState<Booking[]>([]);
   // Categories for events
   const categories = ['Festival', 'Meeting', 'Workshop', 'Conference', 'Social', 'Other'];
 
   // Sample booking data
-  const mockBookings: Booking[] = [
-    {
-      id: '1',
-      amenityName: 'Conference Room A',
-      userName: 'John Smith',
-      startTime: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString(),
-      endTime: new Date(new Date().getTime() + 26 * 60 * 60 * 1000).toISOString(),
-      status: 'pending',
+  // const mockBookings: Booking[] = [
+  //   {
+  //     id: '1',
+  //     amenityName: 'Conference Room A',
+  //     userName: 'John Smith',
+  //     startTime: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString(),
+  //     endTime: new Date(new Date().getTime() + 26 * 60 * 60 * 1000).toISOString(),
+  //     status: 'pending',
       
-      purpose: 'Team meeting',
-    },
-    {
-      id: '2',
-      amenityName: 'Auditorium',
-      userName: 'Emma Johnson',
-      startTime: new Date(new Date().getTime() + 48 * 60 * 60 * 1000).toISOString(),
-      endTime: new Date(new Date().getTime() + 52 * 60 * 60 * 1000).toISOString(),
-      status: 'approved',
+  //     purpose: 'Team meeting',
+  //   },
+  //   {
+  //     id: '2',
+  //     amenityName: 'Auditorium',
+  //     userName: 'Emma Johnson',
+  //     startTime: new Date(new Date().getTime() + 48 * 60 * 60 * 1000).toISOString(),
+  //     endTime: new Date(new Date().getTime() + 52 * 60 * 60 * 1000).toISOString(),
+  //     status: 'approved',
       
-      purpose: 'Department presentation',
-    },
-    {
-      id: '3',
-      amenityName: 'Garden Area',
-      userName: 'Michael Chen',
-      startTime: new Date().toISOString(),
-      endTime: new Date(new Date().getTime() + 3 * 60 * 60 * 1000).toISOString(),
-      status: 'declined',
+  //     purpose: 'Department presentation',
+  //   },
+  //   {
+  //     id: '3',
+  //     amenityName: 'Garden Area',
+  //     userName: 'Michael Chen',
+  //     startTime: new Date().toISOString(),
+  //     endTime: new Date(new Date().getTime() + 3 * 60 * 60 * 1000).toISOString(),
+  //     status: 'declined',
      
-      purpose: 'Birthday celebration',
-    }
-  ];
+  //     purpose: 'Birthday celebration',
+  //   }
+  // ];
 
   // Fetch bookings on component mount
   useEffect(() => {
@@ -174,11 +174,21 @@ const EventManagement: React.FC = () => {
   // ManageBookings methods
   const fetchBookings = async () => {
     // Simulate API call with a delay
+    try {
+    const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/event/getAll-event'); // Replace with actual API endpoint
+    const mockBookings = response.data;
+    
     setTimeout(() => {
       setBookings(mockBookings);
       setLoading(false);
       setRefreshing(false);
     }, 800);
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    Alert.alert('Error', 'Failed to fetch bookings. Please try again.');
+    setLoading(false);
+    setRefreshing(false);
+  }
   };
 
   const onRefresh = () => {
@@ -259,9 +269,9 @@ const EventManagement: React.FC = () => {
 
   // Render booking item
   const renderBookingItem = ({ item }: { item: Booking }) => {
-    const isPending = item.status === 'pending';
-    const isApproved = item.status === 'approved';
-    const isDeclined = item.status === 'declined';
+    const isPending = status === 'pending';
+    const isApproved = status === 'approved';
+    const isDeclined = status === 'declined';
 
     return (
       <View style={[
@@ -277,7 +287,7 @@ const EventManagement: React.FC = () => {
             isDeclined && styles.declinedBadge
           ]}>
             <Text style={styles.statusText}>
-              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+              {status.charAt(0).toUpperCase() + status.slice(1)}
             </Text>
           </View>
         </View>
@@ -285,7 +295,7 @@ const EventManagement: React.FC = () => {
         <View style={styles.bookingDetails}>
           <View style={styles.bookingInfo}>
             <Ionicons name="person-outline" size={16} color="#555" style={styles.icon} />
-            <Text style={styles.detailText}>{item.userName}</Text>
+            <Text style={styles.detailText}>{item.residentName}</Text>
           </View>
           
           
@@ -293,7 +303,7 @@ const EventManagement: React.FC = () => {
           <View style={styles.bookingInfo}>
             <Ionicons name="time-outline" size={16} color="#555" style={styles.icon} />
             <Text style={styles.detailText}>
-              {formatDateTime(item.startTime)} - {formatDateTime(item.endTime)}
+              {formatDateTime(item.date)} - {formatDateTime(item.date)}
             </Text>
           </View>
 
@@ -307,7 +317,7 @@ const EventManagement: React.FC = () => {
           <View style={styles.actionButtons}>
             <TouchableOpacity 
               style={[styles.actionButton, styles.approveButton]} 
-              onPress={() => handleApprove(item.id)}
+              onPress={() => handleApprove(item._id)}
             >
               <Ionicons name="checkmark-outline" size={18} color="#fff" />
               <Text style={styles.actionButtonText}>Approve</Text>
@@ -315,7 +325,7 @@ const EventManagement: React.FC = () => {
             
             <TouchableOpacity 
               style={[styles.actionButton, styles.declineButton]} 
-              onPress={() => handleDecline(item.id)}
+              onPress={() => handleDecline(item._id)}
             >
               <Ionicons name="close-outline" size={18} color="#fff" />
               <Text style={styles.actionButtonText}>Decline</Text>

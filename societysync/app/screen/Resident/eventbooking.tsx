@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   pageTitle: { fontSize: 24, fontWeight: "bold", textAlign: "center", marginBottom: 15, color: "#333" },
   buttonContainer: { flexDirection: "row", justifyContent: "space-between", marginBottom: 15 },
   addEventButton: {
-    backgroundColor: "#e2d3fa",
+    backgroundColor: "#143bcf",
     paddingVertical: 10,
     borderRadius: 5,
     alignItems: "center",

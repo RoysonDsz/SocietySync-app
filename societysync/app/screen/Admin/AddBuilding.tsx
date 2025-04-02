@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Building, Home, MapPin, Plus, User } from 'lucide-react-native';
+import { Building, Home, MapPin, Plus } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -8,8 +8,6 @@ interface AddBuildingProps {
 }
 
 interface Building {
-  ownerName: string;
-  presidentName: string;
   numberOfFlats: string;
   buildingNumber: string;
   location: string;
@@ -17,47 +15,37 @@ interface Building {
 }
 
 const AddBuilding: React.FC<AddBuildingProps> = ({ onAdd }) => {
-  const [name, setName] = useState<string>('');
   const [address, setAddress] = useState<string>('');
   const [flats, setFlats] = useState<string>('');
-  const [presidentName, setPresidentName] = useState<string>('');
   const [buildingName, setBuildingName] = useState<string>('');
   const [buildingNumber, setBuildingNumber] = useState<string>('');
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   const handleAdd = () => {
-    if (!name || !address || !flats || !presidentName || !buildingName || !buildingNumber) {
-      Alert.alert(
-        'Incomplete Information', 
-        'Please fill in all fields before adding a building.',
-        [{ text: 'OK', style: 'default' }]
-      );
+    if (!address || !flats || !buildingName || !buildingNumber) {
+      Alert.alert('Incomplete Information', 'Please fill in all fields.', [{ text: 'OK' }]);
       return;
     }
 
     const newBuilding: Building = {
-      ownerName: name,
-      presidentName: presidentName,
       numberOfFlats: flats,
       buildingNumber: buildingNumber,
       location: address,
-      buildingName: buildingName
+      buildingName: buildingName,
     };
 
     axios.post('https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/create', newBuilding)
       .then((response) => {
-        setName('');
         setAddress('');
         setFlats('');
-        setPresidentName('');
         setBuildingName('');
         setBuildingNumber('');
         setIsExpanded(false);
         onAdd(response.data);
       })
       .catch((error) => {
-        console.error('Error adding building:', error);
-        Alert.alert('Error', 'Failed to add new building.');
+        console.error('Error details:', error.response?.data || error);
+        Alert.alert('Error', `Failed to add building: ${error.message}`);
       });
   };
 
@@ -82,29 +70,7 @@ const AddBuilding: React.FC<AddBuildingProps> = ({ onAdd }) => {
         <Text style={styles.heading}>Add New Building</Text>
         <View style={styles.headerAccent}></View>
       </View>
-      
-      <View style={styles.inputGroup}>
-        <User size={18} color="#4361ee" style={styles.inputIcon} />
-        <TextInput
-          placeholder="Owner Name"
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-      
-      <View style={styles.inputGroup}>
-        <User size={18} color="#4361ee" style={styles.inputIcon} />
-        <TextInput
-          placeholder="President Name"
-          value={presidentName}
-          onChangeText={setPresidentName}
-          style={styles.input}
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-      
+
       <View style={styles.inputGroup}>
         <Building size={18} color="#4361ee" style={styles.inputIcon} />
         <TextInput
@@ -115,7 +81,7 @@ const AddBuilding: React.FC<AddBuildingProps> = ({ onAdd }) => {
           placeholderTextColor="#9ca3af"
         />
       </View>
-      
+
       <View style={styles.inputGroup}>
         <Building size={18} color="#4361ee" style={styles.inputIcon} />
         <TextInput
@@ -126,7 +92,7 @@ const AddBuilding: React.FC<AddBuildingProps> = ({ onAdd }) => {
           placeholderTextColor="#9ca3af"
         />
       </View>
-      
+
       <View style={styles.inputGroup}>
         <MapPin size={18} color="#4361ee" style={styles.inputIcon} />
         <TextInput
@@ -137,11 +103,11 @@ const AddBuilding: React.FC<AddBuildingProps> = ({ onAdd }) => {
           placeholderTextColor="#9ca3af"
         />
       </View>
-      
+
       <View style={styles.inputGroup}>
         <Home size={18} color="#4361ee" style={styles.inputIcon} />
         <TextInput
-          placeholder="Number of flats"
+          placeholder="Number of Flats"
           value={flats}
           onChangeText={setFlats}
           keyboardType="numeric"
@@ -149,7 +115,7 @@ const AddBuilding: React.FC<AddBuildingProps> = ({ onAdd }) => {
           placeholderTextColor="#9ca3af"
         />
       </View>
-      
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={styles.cancelButton} 
@@ -160,11 +126,11 @@ const AddBuilding: React.FC<AddBuildingProps> = ({ onAdd }) => {
         
         <TouchableOpacity 
           style={[
-            styles.addButton, 
-            (!name || !address || !flats || !presidentName || !buildingName || !buildingNumber) && styles.disabledButton
-          ]} 
+            styles.addButton,
+            (!address || !flats || !buildingName || !buildingNumber) && styles.disabledButton
+          ]}
           onPress={handleAdd}
-          disabled={!name || !address || !flats || !presidentName || !buildingName || !buildingNumber}
+          disabled={!address || !flats || !buildingName || !buildingNumber}
         >
           <Text style={styles.addButtonText}>Add Building</Text>
         </TouchableOpacity>
@@ -180,17 +146,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 10,
     marginBottom: 20,
-    overflow: 'hidden',
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   cardHeader: {
     backgroundColor: '#4361ee',
     padding: 16,
-    position: 'relative',
   },
   heading: {
     fontSize: 18,
@@ -204,7 +164,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     width: '20%',
     alignSelf: 'center',
-    borderRadius: 2
   },
   inputGroup: {
     flexDirection: 'row',
@@ -229,8 +188,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
   addButton: {
     backgroundColor: '#4361ee',
@@ -267,12 +224,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 10,
     marginBottom: 20,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
   collapsedContent: {
     flexDirection: 'row',

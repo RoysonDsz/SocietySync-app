@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from "react-native";
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-const WatchmanSignup: React.FC = () => {
+
+const WatchmanSignup = () => {
   const [formData, setFormData] = useState({
     name: "",
     password: "",
@@ -9,70 +12,114 @@ const WatchmanSignup: React.FC = () => {
     phoneNumber: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (key: string, value: string) => {
+    // Restrict phoneNumber to digits only
+    if (key === "phoneNumber" && !/^\d*$/.test(value)) return;
+
+    setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
+    const { name, password, buildingNumber, address, phoneNumber } = formData;
+
+    // Basic validation
+    if (!name || !password || !buildingNumber || !address || !phoneNumber) {
+      Alert.alert("Error", "All fields are required!");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters.");
+      return;
+    }
+
+    Alert.alert("Success", "Watchman registered successfully!");
     console.log("Form Submitted", formData);
   };
 
   return (
-    <div className="max-w-md mx-auto p-4 border rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Watchman Signup</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={formData.name}
-          onChange={handleChange}
-          className="border p-2 rounded"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          className="border p-2 rounded"
-          required
-        />
-        <input
-          type="text"
-          name="buildingNumber"
-          placeholder="Building Number"
-          value={formData.buildingNumber}
-          onChange={handleChange}
-          className="border p-2 rounded"
-          required
-        />
-        <input
-          type="text"
-          name="address"
-          placeholder="Address"
-          value={formData.address}
-          onChange={handleChange}
-          className="border p-2 rounded"
-          required
-        />
-        <input
-          type="text"
-          name="phoneNumber"
-          placeholder="Phone Number"
-          value={formData.phoneNumber}
-          onChange={handleChange}
-          className="border p-2 rounded"
-          required
-        />
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
-          Signup
-        </button>
-      </form>
-    </div>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.heading}>Watchman Signup</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Full Name"
+        value={formData.name}
+        onChangeText={(text) => handleChange("name", text)}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        secureTextEntry
+        value={formData.password}
+        onChangeText={(text) => handleChange("password", text)}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Building Number"
+        value={formData.buildingNumber}
+        onChangeText={(text) => handleChange("buildingNumber", text)}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Address"
+        value={formData.address}
+        onChangeText={(text) => handleChange("address", text)}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Phone Number"
+        keyboardType="numeric"
+        value={formData.phoneNumber}
+        onChangeText={(text) => handleChange("phoneNumber", text)}
+      />
+
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <Text style={styles.buttonText}>Signup</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    backgroundColor: "#f8f9fa",
+    alignItems: "center",
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#1e3a8a",
+  },
+  input: {
+    width: "100%",
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+  },
+  button: {
+    backgroundColor: "#4361ee",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    width: "100%",
+    marginTop: 10,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});
 
 export default WatchmanSignup;

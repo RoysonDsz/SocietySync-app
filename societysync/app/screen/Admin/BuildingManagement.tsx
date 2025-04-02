@@ -8,6 +8,7 @@ import {
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Modal,
@@ -18,6 +19,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { Picker } from 'react-native';
 import AddBuilding from './AddBuilding';
 
 // Define the building type based on backend response
@@ -43,6 +45,9 @@ const BuildingManagement = ({ navigation }: any) => {
   const [presidentName, setPresidentName] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [buildings, setBuildings] = useState<BuildingType[]>([]);
+  const [residents, setResidents] = useState([]);
+  const [selectedResident, setSelectedResident] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const getAllBuildings = async () => {
     try {
@@ -58,6 +63,25 @@ const BuildingManagement = ({ navigation }: any) => {
     getAllBuildings();
   }, []);
 
+  useEffect(() => {
+    if (presidentModalVisible && selectedBuilding) {
+      fetchResidents();
+    }
+  }, [presidentModalVisible, selectedBuilding]);
+
+  const fetchResidents = async () => {
+    if (!selectedBuilding) return;
+    setLoading(true);
+    try {
+      const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/assign/${id}/residents?buildingId=${selectedBuilding._id}`);
+      setResidents(response.data);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch residents.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEdit = (building: BuildingType) => {
     setSelectedBuilding(building);
     setEditedFlats(building.numberOfFlats);
@@ -68,29 +92,36 @@ const BuildingManagement = ({ navigation }: any) => {
     setSelectedBuilding(building);
     setPresidentName(building.presidentName || '');
     setIsAdmin(false);
+    setSelectedResident('');
     setPresidentModalVisible(true);
   };
 
-  const savePresident = () => {
-    const updated = buildings.map((b) => {
-      if (b._id === selectedBuilding?._id) {
-        return {
-          ...b,
-          presidentName: presidentName,
-          isAdmin: isAdmin
-        };
-      }
-      return b;
-    });
-
-    setBuildings(updated);
-    setPresidentModalVisible(false);
+  const assignPresident = async () => {
+    if (!selectedResident) {
+      Alert.alert('Error', 'Please select a resident.');
+      return;
+    }
     
-    Alert.alert(
-      'President Assigned',
-      `${presidentName} has been assigned as president of ${selectedBuilding?.buildingName}${isAdmin ? ' with admin rights' : ''}.`,
-      [{ text: 'OK' }]
-    );
+    try {
+      await axios.patch(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/assign-president`, { 
+        id: selectedResident 
+      });
+      
+      Alert.alert(
+        'President Assigned',
+        'President assigned successfully!',
+        [{ 
+          text: 'OK',
+          onPress: () => {
+            setPresidentModalVisible(false);
+            getAllBuildings(); // Refresh building list to show updated president
+          }
+        }]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to assign president.');
+      console.log(error);
+    }
   };
 
   const handleDelete = async(buildingId: string) => {
@@ -102,19 +133,20 @@ const BuildingManagement = ({ navigation }: any) => {
     }
   };
 
-  const saveChanges = () => {
-    const updated = buildings.map((b) => {
-      if (b._id === selectedBuilding?._id) {
-        return {
-          ...b,
-          numberOfFlats: editedFlats
-        };
-      }
-      return b;
-    });
-
-    setBuildings(updated);
-    setModalVisible(false);
+  const saveChanges = async () => {
+    if (!selectedBuilding) return;
+    
+    try {
+      await axios.patch(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/update/${selectedBuilding._id}`, {
+        numberOfFlats: editedFlats
+      });
+      
+      getAllBuildings(); // Refresh the buildings list
+      setModalVisible(false);
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Error', 'Failed to update building information.');
+    }
   };
 
   return (
@@ -137,14 +169,14 @@ const BuildingManagement = ({ navigation }: any) => {
             <View style={styles.cardContent}>
               <TouchableOpacity
                 style={styles.buildingButton}
-                onPress={() => navigation.navigate('BuildingPage', { building: item })}
+                onPress={() => navigation.navigate('BuildingPage', { building: item._id })}
               >
                 <Text style={styles.buildingName}>{item.buildingName}</Text>
                 <View style={styles.buildingInfo}>
                   <Building size={14} color="#555" style={styles.infoIcon} />
                   <Text style={styles.infoText}>{item.numberOfFlats} Flats</Text>
                 </View>
-                {/* {item.presidentName ? (
+                {item.presidentName ? (
                   <View style={styles.presidentInfoContainer}>
                     <User size={14} color={item.isAdmin ? "#4361ee" : "#3a86ff"} style={styles.infoIcon} />
                     <Text style={[styles.presidentInfo, item.isAdmin && styles.adminText]}>
@@ -156,7 +188,7 @@ const BuildingManagement = ({ navigation }: any) => {
                     <User size={14} color="#aaa" style={styles.infoIcon} />
                     <Text style={styles.noPresidentText}>No president assigned</Text>
                   </View>
-                )} */}
+                )}
               </TouchableOpacity>
               <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity 
@@ -219,19 +251,40 @@ const BuildingManagement = ({ navigation }: any) => {
               <Text style={styles.modalTitle}>Assign President</Text>
               <View style={styles.modalDivider}></View>
             </View>
-            <View style={styles.buildingNameContainer}>
-              <Building size={18} color="#3a86ff" />
-              <Text style={styles.modalBuildingName}>{selectedBuilding?.buildingName}</Text>
-            </View>
+            {selectedBuilding && (
+              <View style={styles.buildingNameContainer}>
+                <Building size={18} color="#3a86ff" />
+                <Text style={styles.modalBuildingName}>{selectedBuilding.buildingName}</Text>
+              </View>
+            )}
             
-            <Text style={styles.inputLabel}>President Name:</Text>
-            <TextInput
-              value={presidentName}
-              onChangeText={setPresidentName}
-              placeholder="Enter president name"
-              style={styles.input}
-              placeholderTextColor="#999"
-            />          
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#3a86ff" />
+                <Text style={styles.loadingText}>Loading residents...</Text>
+              </View>
+            ) : (
+              <View style={styles.pickerContainer}>
+                <Text style={styles.inputLabel}>Select Resident:</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedResident}
+                    onValueChange={(value) => setSelectedResident(value)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select Resident" value="" />
+                    {residents.map(resident => (
+                      <Picker.Item 
+                        key={resident._id} 
+                        label={resident.name} 
+                        value={resident._id} 
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            )}
+            
             <View style={styles.adminToggleContainer}>
               <View style={styles.adminLabelContainer}>
                 <Shield size={18} color="#4361ee" style={styles.adminIcon} />
@@ -262,11 +315,11 @@ const BuildingManagement = ({ navigation }: any) => {
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                onPress={savePresident} 
-                style={[styles.saveButton, !presidentName.trim() && styles.disabledButton]} 
-                disabled={!presidentName.trim()}
+                onPress={assignPresident} 
+                style={[styles.saveButton, !selectedResident && styles.disabledButton]} 
+                disabled={!selectedResident}
               >
-                <Text style={styles.saveButtonText}>Save</Text>
+                <Text style={styles.saveButtonText}>Assign President</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -276,7 +329,7 @@ const BuildingManagement = ({ navigation }: any) => {
   );
 };
 
-// Styles remain the same
+// Styles remain the same but with additions for new elements
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -581,9 +634,34 @@ const styles = StyleSheet.create({
   footerButtonTextActive: {
     color: '#4361ee',
     fontWeight: 'bold',
-  }
+  },
   
-
+  // New styles for resident picker
+  pickerContainer: {
+    marginBottom: 16,
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#e0e7ff',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    backgroundColor: '#f8fafc',
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    color: '#333',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#3a86ff',
+    fontWeight: '500',
+  }
 });
 
 export default BuildingManagement;

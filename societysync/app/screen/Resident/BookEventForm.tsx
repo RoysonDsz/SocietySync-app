@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, Alert, StyleSheet } from "react-native";
 
 interface FormData {
@@ -53,7 +53,20 @@ const BookEventForm: React.FC = () => {
       Alert.alert("Error booking event. Please try again.");
     }
   };
-
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+        formData.residentNumber=response.data.response.phoneNumber;
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+  
+    fetchUserData();
+  }, []);
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Event Booking</Text>

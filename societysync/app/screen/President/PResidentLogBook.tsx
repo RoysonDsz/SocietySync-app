@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Modal, Linking, Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import axios from 'axios';
 
 interface Resident {
-  id: string;
+  _id: string;
   name: string;
   flatNumber: string;
   phoneNumber: string;
-  photo: string;
+  buildingName: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const PResidentLogBook: React.FC = () => {
@@ -17,83 +22,93 @@ const PResidentLogBook: React.FC = () => {
   const [showManageModal, setShowManageModal] = useState(false);
   const [manageModeIsEdit, setManageModeIsEdit] = useState(false);
   
-  // Form state for adding/editing residents
-  const [residentForm, setResidentForm] = useState<Omit<Resident, 'id'>>({
+  const [residentForm, setResidentForm] = useState<Omit<Resident, '_id'>>({
     name: '',
     flatNumber: '',
     phoneNumber: '',
-    photo: ''
+    buildingName: '',
+    email: '',
+    role: 'resident',
+    createdAt: '',
+    updatedAt: ''
   });
 
-  // Sample resident data - now as state so we can modify it
-  const [residents, setResidents] = useState<Resident[]>([
-    { id: '1', name: 'John Smith', flatNumber: 'A-101', phoneNumber: '9876543210', photo: 'https://example.com/photo1.jpg' },
-    { id: '2', name: 'Maria Garcia', flatNumber: 'B-205', phoneNumber: '9876543211', photo: 'https://example.com/photo2.jpg' },
-    { id: '3', name: 'Raj Patel', flatNumber: 'C-302', phoneNumber: '9876543212', photo: 'https://example.com/photo3.jpg' },
-    { id: '4', name: 'Sarah Johnson', flatNumber: 'A-103', phoneNumber: '9876543213', photo: 'https://example.com/photo4.jpg' },
-    { id: '5', name: 'Robert Fox', flatNumber: 'D-401', phoneNumber: '9876543214', photo: 'https://example.com/photo5.jpg' },
-  ]);
+  const [residents, setResidents] = useState<Resident[]>([]);
 
-  // Function to call resident
+  useEffect(() => {
+    fetchResidents();
+  }, []);
+
+  const fetchResidents = async () => {
+    try {
+      const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/users');
+      const residentsData = response.data.filter((user: any) => user.role === 'resident');
+      setResidents(residentsData);
+    } catch (error) {
+      console.error('Error fetching residents:', error);
+      Alert.alert('Error', 'Failed to fetch residents. Please try again later.');
+    }
+  };
+
   const callResident = (phoneNumber: string) => {
     Linking.openURL(`tel:${phoneNumber}`);
   };
 
-  // Function to open add resident modal
   const openAddResidentModal = () => {
     setResidentForm({
       name: '',
       flatNumber: '',
       phoneNumber: '',
-      photo: ''
+      buildingName: '',
+      email: '',
+      role: 'resident',
+      createdAt: '',
+      updatedAt: ''
     });
     setManageModeIsEdit(false);
     setShowManageModal(true);
   };
 
-  // Function to open edit resident modal
   const openEditResidentModal = (resident: Resident) => {
     setResidentForm({
       name: resident.name,
       flatNumber: resident.flatNumber,
       phoneNumber: resident.phoneNumber,
-      photo: resident.photo
+      buildingName: resident.buildingName,
+      email: resident.email,
+      role: resident.role,
+      createdAt: resident.createdAt,
+      updatedAt: resident.updatedAt
     });
     setSelectedResident(resident);
     setManageModeIsEdit(true);
     setShowManageModal(true);
   };
 
-  // Function to handle form input changes
-  const handleFormChange = (field: keyof Omit<Resident, 'id'>, value: string) => {
+  const handleFormChange = (field: keyof Omit<Resident, '_id'>, value: string) => {
     setResidentForm(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  // Function to save resident (add or update)
   const saveResident = () => {
-    // Basic validation
-    if (!residentForm.name || !residentForm.flatNumber || !residentForm.phoneNumber) {
+    if (!residentForm.name || !residentForm.flatNumber || !residentForm.phoneNumber || !residentForm.buildingName || !residentForm.email) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
     if (manageModeIsEdit && selectedResident) {
-      // Update existing resident
       const updatedResidents = residents.map(r => 
-        r.id === selectedResident.id 
+        r._id === selectedResident._id 
           ? { ...r, ...residentForm } 
           : r
       );
       setResidents(updatedResidents);
       Alert.alert('Success', 'Resident updated successfully');
     } else {
-      // Add new resident with a unique ID
-      const newId = (Math.max(...residents.map(r => parseInt(r.id))) + 1).toString();
       const newResident: Resident = {
-        id: newId,
+        _id: Date.now().toString(),
         ...residentForm
       };
       setResidents([...residents, newResident]);
@@ -102,7 +117,6 @@ const PResidentLogBook: React.FC = () => {
     setShowManageModal(false);
   };
 
-  // Function to delete resident - Enhanced to ensure it works correctly
   const deleteResident = (id: string) => {
     if (!id) {
       console.error("Delete called with invalid ID");
@@ -120,29 +134,11 @@ const PResidentLogBook: React.FC = () => {
         {
           text: 'Delete',
           onPress: () => {
-            try {
-              // Filter out the resident with matching ID
-              const updatedResidents = residents.filter(resident => resident.id !== id);
-              
-              // Log for debugging
-              console.log(`Deleting resident with ID: ${id}`);
-              console.log(`Before: ${residents.length} residents, After: ${updatedResidents.length} residents`);
-              
-              // Update the state with the filtered array
-              setResidents(updatedResidents);
-              
-              // Close the modal
-              setShowResidentModal(false);
-              
-              // Clear the selected resident
-              setSelectedResident(null);
-              
-              // Show success message
-              Alert.alert('Success', 'Resident removed successfully');
-            } catch (error) {
-              console.error("Error deleting resident:", error);
-              Alert.alert('Error', 'Failed to delete resident. Please try again.');
-            }
+            const updatedResidents = residents.filter(resident => resident._id !== id);
+            setResidents(updatedResidents);
+            setShowResidentModal(false);
+            setSelectedResident(null);
+            Alert.alert('Success', 'Resident removed successfully');
           },
           style: 'destructive'
         }
@@ -150,7 +146,6 @@ const PResidentLogBook: React.FC = () => {
     );
   };
 
-  // Function to render each resident item
   const renderResidentItem = ({ item }: { item: Resident }) => (
     <TouchableOpacity 
       style={styles.listItem}
@@ -165,7 +160,7 @@ const PResidentLogBook: React.FC = () => {
         </View>
         <View style={styles.listItemText}>
           <Text style={styles.listItemTitle}>{item.name}</Text>
-          <Text style={styles.listItemSubtitle}>Flat: {item.flatNumber}</Text>
+          <Text style={styles.listItemSubtitle}>Flat: {item.flatNumber}, Building: {item.buildingName}</Text>
         </View>
       </View>
       <View style={styles.actionButtons}>
@@ -185,15 +180,14 @@ const PResidentLogBook: React.FC = () => {
     </TouchableOpacity>
   );
 
-  // Filter residents based on search query
   const filteredResidents = residents.filter(resident => 
     resident.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    resident.flatNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    resident.flatNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    resident.buildingName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <View style={styles.container}>
-      {/* Search and Add Bar */}
       <View style={styles.headerContainer}>
         <View style={styles.searchContainer}>
           <MaterialCommunityIcons name="magnify" size={20} color="#666" style={styles.searchIcon} />
@@ -214,7 +208,6 @@ const PResidentLogBook: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Resident List */}
       {residents.length === 0 ? (
         <View style={styles.emptyStateContainer}>
           <MaterialCommunityIcons name="account-off" size={64} color="#ccc" />
@@ -227,12 +220,11 @@ const PResidentLogBook: React.FC = () => {
         <FlatList
           data={filteredResidents}
           renderItem={renderResidentItem}
-          keyExtractor={item => item.id}
+          keyExtractor={item => item._id}
           contentContainerStyle={styles.listContainer}
         />
       )}
 
-      {/* Resident Details Modal */}
       <Modal
         visible={showResidentModal}
         transparent={true}
@@ -261,9 +253,19 @@ const PResidentLogBook: React.FC = () => {
                     <Text style={styles.contactCardValue}>{selectedResident.flatNumber}</Text>
                   </View>
                   <View style={styles.contactCard}>
+                    <MaterialCommunityIcons name="office-building" size={22} color="#333" style={styles.contactCardIcon} />
+                    <Text style={styles.contactCardTitle}>Building Name</Text>
+                    <Text style={styles.contactCardValue}>{selectedResident.buildingName}</Text>
+                  </View>
+                  <View style={styles.contactCard}>
                     <MaterialCommunityIcons name="phone" size={22} color="#333" style={styles.contactCardIcon} />
                     <Text style={styles.contactCardTitle}>Phone Number</Text>
                     <Text style={styles.contactCardValue}>{selectedResident.phoneNumber}</Text>
+                  </View>
+                  <View style={styles.contactCard}>
+                    <MaterialCommunityIcons name="email" size={22} color="#333" style={styles.contactCardIcon} />
+                    <Text style={styles.contactCardTitle}>Email</Text>
+                    <Text style={styles.contactCardValue}>{selectedResident.email}</Text>
                   </View>
                 </View>
                 
@@ -296,8 +298,7 @@ const PResidentLogBook: React.FC = () => {
                   
                   <TouchableOpacity 
                     style={styles.residentActionCard}
-                    onPress={() => deleteResident(selectedResident.id)}
-                    testID="deleteResidentButton" // Added for testing
+                    onPress={() => deleteResident(selectedResident._id)}
                   >
                     <View style={[styles.residentActionIcon, {backgroundColor: '#ffebee'}]}>
                       <MaterialCommunityIcons name="delete" size={24} color="#c62828" />
@@ -311,7 +312,6 @@ const PResidentLogBook: React.FC = () => {
         </View>
       </Modal>
 
-      {/* Add/Edit Resident Modal */}
       <Modal
         visible={showManageModal}
         transparent={true}
@@ -355,6 +355,16 @@ const PResidentLogBook: React.FC = () => {
                 </View>
                 
                 <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Building Name *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g. Building A"
+                    value={residentForm.buildingName}
+                    onChangeText={(value) => handleFormChange('buildingName', value)}
+                  />
+                </View>
+                
+                <View style={styles.formGroup}>
                   <Text style={styles.formLabel}>Phone Number *</Text>
                   <TextInput
                     style={styles.formInput}
@@ -366,16 +376,16 @@ const PResidentLogBook: React.FC = () => {
                 </View>
                 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Photo URL (Optional)</Text>
+                  <Text style={styles.formLabel}>Email *</Text>
                   <TextInput
                     style={styles.formInput}
-                    placeholder="Enter photo URL"
-                    value={residentForm.photo}
-                    onChangeText={(value) => handleFormChange('photo', value)}
+                    placeholder="Enter email"
+                    value={residentForm.email}
+                    onChangeText={(value) => handleFormChange('email', value)}
+                    keyboardType="email-address"
                   />
                 </View>
 
-                {/* Form actions */}
                 <View style={styles.formActions}>
                   <TouchableOpacity
                     style={[styles.formButton, styles.cancelButton]}
@@ -404,7 +414,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 24, // Added padding to prevent overlap with status bar
+    paddingTop: 24,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -446,7 +456,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 24, // Added padding bottom for list items
+    paddingBottom: 24,
   },
   emptyStateContainer: {
     flex: 1,
@@ -478,7 +488,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3f2fd',
     borderRadius: 16,
     marginBottom: 12,
-    shadowColor: '#000', // Added shadow for better visual hierarchy
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.5,
@@ -487,7 +497,7 @@ const styles = StyleSheet.create({
   listItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1, // Added flex to ensure proper layout
+    flex: 1,
   },
   avatarContainer: {
     width: 50,
@@ -557,7 +567,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24, // Added margin for spacing
+    marginBottom: 24,
   },
   modalTitle: {
     fontSize: 20,
@@ -634,7 +644,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Add/Edit Form styles
   formContainer: {
     width: '100%',
   },

@@ -16,39 +16,50 @@ const VisitorAlert: React.FC = () => {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const handleSubmit = () => {
-    {
-      /*
-      axios.post('https://example.com/api/user', notificationData)
-    .then(response => {
-        // This block will execute if the request is successful
-        console.log('Success:', response.data);
-    })
-    .catch(error => {
-        // This block will execute if there's an error in the request
-        console.error('Error:', error);
-    });
-       */
-    }
+  const handleSubmit = async () => {
     if (buildingNumber.trim() === "" || visitorName.trim() === "" || visitTime.trim() === "") {
       alert("Please fill in all fields.");
       return;
     }
 
-    alert(`Visitor alert sent! \nBuilding/Flat: ${buildingNumber} \nVisitor: ${visitorName} \nTime: ${visitTime}`);
+    const notificationData = {
+      buildingNumber,
+      visitorName,
+      visitTime,
+    };
 
-    // Trigger animation
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      easing: Easing.out(Easing.exp),
-      useNativeDriver: true,
-    }).start(() => fadeAnim.setValue(0));
+    try {
+      const response = await fetch('https://mrnzp03x-5050.inc1.devtunnels.ms/api/alert/visitor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(notificationData),
+      });
 
-    // Clear input fields
-    setBuildingNumber("");
-    setVisitorName("");
-    setVisitTime("");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      alert("Visitor alert sent!");
+
+      // Trigger animation
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.exp),
+        useNativeDriver: true,
+      }).start(() => fadeAnim.setValue(0));
+
+      // Clear input fields
+      setBuildingNumber("");
+      setVisitorName("");
+      setVisitTime("");
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to send visitor alert. Please try again.');
+    }
   };
 
   return (
@@ -118,7 +129,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   submitButton: {
-    backgroundColor: "#4A6B8A",
+    backgroundColor: "#162bcd",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
@@ -138,7 +149,7 @@ const styles = StyleSheet.create({
   alertBox: {
     position: "absolute",
     top: 60,
-    backgroundColor: "#81C784",
+    backgroundColor: "white",
     padding: 10,
     borderRadius: 8,
   },

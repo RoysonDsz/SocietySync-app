@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   iconContainer: {
-    backgroundColor: "#9CCAD8",
+    backgroundColor: "#0e7fd6",
     padding: 14,
     borderRadius: 12,
   },
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     color: "#7F8C8D",
   },
   callButton: {
-    backgroundColor: "#5F87A0",
+    backgroundColor: "#07ccdf",
     padding: 10,
     borderRadius: 10,
   },

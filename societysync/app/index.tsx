@@ -2,7 +2,10 @@
 import { View, Text, StyleSheet } from "react-native";
 import Cards from "./screen/Cards"; // Import Cards Page
 
+
+
 export default function Home() {
+ 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Welcome to Society Sync</Text>

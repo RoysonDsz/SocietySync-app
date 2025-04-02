@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable, Keyboard, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Keyboard, Platform, Linking } from 'react-native';
 import { Slot, useRouter, usePathname, useSegments, router } from 'expo-router';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import URLParse from 'url-parse';
 export default function Layout() {
   const currentRouter = useRouter();
-  const { userId } = currentRouter.query;
+
+   
+  // const { userId } = currentRouter.query;
   const currentPath = usePathname();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   
@@ -15,9 +17,11 @@ export default function Layout() {
 
   // Navigate to dashboard on initial render if we're at the root
   useEffect(() => {
+
     if (currentPath === '/') {
       router.replace('/screen/Resident/dashboardscreen');
     }
+    
   }, []);
 
   const navigateTo = (route: string) => {

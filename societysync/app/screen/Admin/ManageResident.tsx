@@ -173,9 +173,9 @@ const ManageResident = ({ route, navigation }: any) => {
 
         <View style={styles.switchContainer}>
           <View style={styles.switchLabelContainer}>
-            <Text style={styles.switchLabel}>Committee Member</Text>
+            <Text style={styles.switchLabel}>President</Text>
             <Text style={styles.switchDescription}>
-              Designate this resident as a committee member
+              Designate this resident as a President
             </Text>
           </View>
           <Switch

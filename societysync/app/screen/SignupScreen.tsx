@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,10 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
+  ActivityIndicator 
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker'; // Updated import for Picker
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
 
 const SignUpScreen: React.FC = () => {
   const router = useRouter();
@@ -21,10 +24,8 @@ const SignUpScreen: React.FC = () => {
     name: '',
     email: '',
     phoneNumber: '',
-    buildingName: '',
-    flatNumber: '',
     password: '',
-    confirmPassword: '',
+    building: '', // Added building to formData
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -34,46 +35,66 @@ const SignUpScreen: React.FC = () => {
   };
 
   const handleSignUp = async () => {
-    if (!formData.name || !formData.email || !formData.phoneNumber || 
-        !formData.buildingName || !formData.flatNumber || !formData.password) {
+    if (!formData.name || !formData.email || !formData.phoneNumber || !formData.password) {
       alert('Please fill in all fields');
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-
     try {
-      const response = await fetch('https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          buildingName: formData.buildingName,
-          flatNumber: formData.flatNumber,
-          password: formData.password,
-        }),
-      });
+      const response = await axios.post('https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/signup', formData);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status == 200) {
         alert('Sign up successful!');
         router.push('./login');
       } else {
-        alert(data.message || 'Signup failed');
+        alert('Signup failed');
       }
     } catch (error) {
       console.error('Signup error:', error);
       alert('Something went wrong. Please try again.');
     }
   };
+
+// Separate BuildingDropdown component
+const BuildingDropdown = () => { // Add this prop
+  const [buildings, setBuildings] = useState([]);
+  const [selectedBuilding, setSelectedBuilding] = useState('');
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/')
+      .then(response => {
+        setBuildings(response.data);
+        setLoading(false);
+      })
+      .catch(error => console.error(error));
+  }, []);
+  
+  const handleSelect = (value:any) => {
+    setSelectedBuilding(value);
+    formData.building=value;
+     // Now this will work
+  };
+
+  return (
+    <View style={styles.inputContainer}>
+      <Text style={styles.label}>Select Building</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#00ff00" />
+      ) : (
+        <Picker
+          selectedValue={selectedBuilding}
+          onValueChange={handleSelect}
+          style={styles.input}>
+          <Picker.Item label="Select Building" value="" />
+          {buildings.map(building => (
+            <Picker.Item key={building._id} label={building.buildingName} value={building.buildingName} />
+          ))}
+        </Picker>
+      )}
+    </View>
+  );
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -121,26 +142,9 @@ const SignUpScreen: React.FC = () => {
                 onChangeText={(text) => handleInputChange('phoneNumber', text)}
               />
             </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Building Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter building name"
-                value={formData.buildingName}
-                onChangeText={(text) => handleInputChange('buildingName', text)}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Flat Number</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter flat number"
-                value={formData.flatNumber}
-                onChangeText={(text) => handleInputChange('flatNumber', text)}
-              />
-            </View>
+            
+            {/* Add the BuildingDropdown component here */}
+            <BuildingDropdown />
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Create Password</Text>
@@ -157,23 +161,6 @@ const SignUpScreen: React.FC = () => {
                 </TouchableOpacity>
               </View>
             </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <View style={styles.passwordInputContainer}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Confirm your password"
-                  secureTextEntry={!showConfirmPassword}
-                  value={formData.confirmPassword}
-                  onChangeText={(text) => handleInputChange('confirmPassword', text)}
-                />
-                <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={24} color="#777" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
             <TouchableOpacity style={styles.button} onPress={handleSignUp}>
               <Text style={styles.buttonText}>Sign Up</Text>
             </TouchableOpacity>
@@ -214,34 +201,30 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   loginTextContainer: {
-    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 20,
   },
   loginText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#007bff",
-    textAlign: "center",
-    marginVertical: 10,
+    fontSize: 16,
+    color: '#666',
   },
   passwordInput: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 15,
+    flex: 1,
     fontSize: 16,
-    marginBottom: 10,
   },
   eyeIcon: {
-    position: "absolute",
-    right: 15,
-    top: "50%",
-    transform: [{ translateY: -12 }],
+    padding: 10,
   },
   passwordInputContainer: {
-    marginVertical: 10,
-    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   loginLink: { 
     color: '#007BFF',

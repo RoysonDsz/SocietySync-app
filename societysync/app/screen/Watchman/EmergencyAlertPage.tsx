@@ -11,6 +11,7 @@ import {
   StatusBar,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface EmergencyMessage {
   id: number;
@@ -22,6 +23,10 @@ interface EmergencyMessage {
 }
 
 export default function App() {
+  // Define the same color constants as in ResidentLogBook
+  const primaryBlue = '#180DC9';
+  const primaryCyan = '#06D9E0';
+
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -75,9 +80,15 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#d32f2f" barStyle="light-content" />
+      <StatusBar backgroundColor={primaryBlue} barStyle="light-content" />
       
-      <View style={styles.navbar}>
+      {/* Updated LinearGradient with the same colors as the ResidentLogBook */}
+      <LinearGradient
+        colors={[primaryCyan, primaryBlue]}
+        style={styles.navbar}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
         <Text style={styles.logo}>Emergency Alert System</Text>
         <TouchableOpacity 
           style={styles.notificationIcon} 
@@ -90,7 +101,7 @@ export default function App() {
             </View>
           )}
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
       
       <ScrollView style={styles.contentContainer}>
         <View style={styles.formContainer}>
@@ -178,9 +189,17 @@ export default function App() {
             />
           </View>
           
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Send Emergency Alert</Text>
-          </TouchableOpacity>
+          {/* Updated LinearGradient with the same colors as the ResidentLogBook */}
+          <LinearGradient
+            colors={[primaryCyan, primaryBlue]}
+            style={styles.submitButton}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <TouchableOpacity style={styles.submitButtonContent} onPress={handleSubmit}>
+              <Text style={styles.submitButtonText}>Send Emergency Alert</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
       </ScrollView>
       
@@ -192,12 +211,18 @@ export default function App() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.notificationPanel}>
-            <View style={styles.notificationHeader}>
+            {/* Updated LinearGradient with the same colors as the ResidentLogBook */}
+            <LinearGradient
+              colors={[primaryCyan, primaryBlue]}
+              style={styles.notificationHeader}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
               <Text style={styles.notificationTitle}>Active Alerts</Text>
               <TouchableOpacity onPress={() => setShowNotifications(false)}>
                 <Text style={styles.closeButton}>✕</Text>
               </TouchableOpacity>
-            </View>
+            </LinearGradient>
             
             <ScrollView style={styles.notificationList}>
               {alerts.length === 0 ? (
@@ -241,7 +266,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f2f5',
   },
   navbar: {
-    backgroundColor: '#d32f2f',
     paddingVertical: 16,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -271,7 +295,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -8,
     right: -8,
-    backgroundColor: '#ff3d00',
+    backgroundColor: '#4169E1',
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -307,7 +331,7 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#d32f2f',
+    color: '#180DC9', // Updated to match primaryBlue
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -341,7 +365,7 @@ const styles = StyleSheet.create({
   levelSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    flexWrap: 'wrap', // Allow wrapping to the next line
+    flexWrap: 'wrap',
   },
   levelButton: {
     flex: 1,
@@ -358,10 +382,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   submitButton: {
-    backgroundColor: '#d32f2f',
-    padding: 16,
     borderRadius: 4,
+  },
+  submitButtonContent: {
+    padding: 16,
     alignItems: 'center',
+    width: '100%',
   },
   submitButtonText: {
     color: 'white',
@@ -386,16 +412,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   notificationTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: 'white',
   },
   closeButton: {
     fontSize: 18,
     padding: 4,
+    color: 'white',
   },
   notificationList: {
     padding: 16,

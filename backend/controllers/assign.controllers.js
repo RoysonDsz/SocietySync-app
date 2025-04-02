@@ -25,7 +25,7 @@ const getResidentsForBuilding = async (req, res) => {
 };
 
 const assignFlat = async (req, res) => {
-    const { buildingNumber, residentEmail } = req.params;
+    const { buildingName, residentEmail } = req.params;
     const { flatNumber } = req.body;
 
     try {
@@ -33,7 +33,7 @@ const assignFlat = async (req, res) => {
         if (!user) return errorResponse(res, 404, "Resident not found");
 
         const [existingFlat, existingAssignment] = await Promise.all([
-            assignModel.findOne({ buildingNumber, flatNumber }),
+            assignModel.findOne({ buildingName, flatNumber }),
             assignModel.findOne({ residentEmail })
         ]);
 
@@ -44,7 +44,7 @@ const assignFlat = async (req, res) => {
             residentName: user.name,
             residentEmail: user.email,
             residentNumber: user.phoneNumber,
-            buildingNumber,
+            buildingName,
             flatNumber
         });
 
@@ -115,7 +115,7 @@ const deleteResidentById = async (req, res) => {
 // Update resident assignment
 const updatedResident = async (req, res) => {
     const { id } = req.params;
-    const { flatNumber, buildingNumber } = req.body;
+    const { flatNumber, buildingName } = req.body;
 
     if (!id) return errorResponse(res, 400, "Invalid ID");
 
@@ -124,9 +124,9 @@ const updatedResident = async (req, res) => {
         if (!existingAssignment) return errorResponse(res, 404, "Resident not found");
 
         // Check for flat availability
-        if (flatNumber && buildingNumber) {
+        if (flatNumber && buildingName) {
             const occupiedFlat = await assignModel.findOne({
-                buildingNumber,
+                buildingName,
                 flatNumber,
                 _id: { $ne: id }
             });
@@ -138,7 +138,7 @@ const updatedResident = async (req, res) => {
 
         const updates = {};
         if (flatNumber) updates.flatNumber = flatNumber;
-        if (buildingNumber) updates.buildingNumber = buildingNumber;
+        if (buildingName) updates.buildingName = buildingName;
 
         const updatedResident = await assignModel.findByIdAndUpdate(
             id,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -11,6 +11,7 @@ import {
   Dimensions,
   Modal
 } from 'react-native';
+import axios from 'axios';
 
 // Get screen dimensions for responsive layout
 const windowWidth = Dimensions.get('window').width;
@@ -18,61 +19,20 @@ const windowHeight = Dimensions.get('window').height;
 
 // Define TypeScript interfaces
 interface Visitor {
-  id: number;
-  name: string;
-  phone: string;
-  purpose: string;
-  flatNo: string;
-  checkIn: string;
-  checkOut: string | null;
-  status: 'checked-in' | 'checked-out';
+  _id: string;
+  visitorName: string;
+  buildingNumber: string;
+  visitTime: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
 const PresidentVisitorLog: React.FC = () => {
-  // Sample initial visitor data - same as watchman side
-  const [visitors, setVisitors] = useState<Visitor[]>([
-    { 
-      id: 1, 
-      name: "John Smith", 
-      phone: "555-123-4567", 
-      purpose: "Meeting with resident", 
-      flatNo: "A-101", 
-      checkIn: "2025-03-19T09:30:00", 
-      checkOut: "2025-03-19T11:45:00",
-      status: "checked-out"
-    },
-    { 
-      id: 2, 
-      name: "Sarah Johnson", 
-      phone: "555-987-6543", 
-      purpose: "Delivery", 
-      flatNo: "B-205", 
-      checkIn: "2025-03-19T10:15:00", 
-      checkOut: null,
-      status: "checked-in"
-    },
-    { 
-      id: 3, 
-      name: "Mike Wilson", 
-      phone: "555-456-7890", 
-      purpose: "Maintenance", 
-      flatNo: "C-302", 
-      checkIn: "2025-03-19T08:45:00", 
-      checkOut: null,
-      status: "checked-in"
-    }
-  ]);
-
-  // State for search term
+  const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // State for selected visitor details
   const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
-  
-  // State for filter type
   const [filterType, setFilterType] = useState<'all' | 'checked-in' | 'checked-out'>('all');
-
-  // Date filter states
   const [isDateFilterActive, setIsDateFilterActive] = useState(false);
   const [startDate, setStartDate] = useState(""); // Format: YYYY-MM-DD
   const [endDate, setEndDate] = useState(""); // Format: YYYY-MM-DD
@@ -81,6 +41,19 @@ const PresidentVisitorLog: React.FC = () => {
   const handleViewDetails = (visitor: Visitor) => {
     setSelectedVisitor(visitor);
   };
+
+  const getVisitorLog = async() => {
+    try {
+      const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/visitor/get-visitor');
+      setVisitors(response.data.response);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  useEffect(() => {
+    getVisitorLog();
+  }, []);
 
   // Function to close visitor details
   const handleCloseDetails = () => {
@@ -98,40 +71,31 @@ const PresidentVisitorLog: React.FC = () => {
   const filteredVisitors = visitors.filter(visitor => {
     // Apply search filter
     const matchesSearch = 
-      visitor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      visitor.phone.includes(searchTerm) ||
-      visitor.flatNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      visitor.purpose.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Apply status filter
-    const matchesStatus = 
-      filterType === 'all' || 
-      visitor.status === filterType;
+      visitor.visitorName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      visitor.buildingNumber.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Apply date filter if active
     let matchesDate = true;
     if (isDateFilterActive && startDate && endDate) {
-      const visitorDate = new Date(visitor.checkIn).toISOString().split('T')[0];
+      const visitorDate = new Date(visitor.createdAt).toISOString().split('T')[0];
       const filterStartDate = startDate;
       const filterEndDate = endDate;
       
       matchesDate = visitorDate >= filterStartDate && visitorDate <= filterEndDate;
     }
     
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesDate;
   });
 
   // Get statistics
   const totalVisitors = visitors.length;
-  const checkedInVisitors = visitors.filter(v => v.status === 'checked-in').length;
-  const checkedOutVisitors = visitors.filter(v => v.status === 'checked-out').length;
 
   // Table header component
   const TableHeader: React.FC = () => (
     <View style={styles.tableHeader}>
       <Text style={[styles.headerCell, { flex: 2.5 }]}>Visitor</Text>
-      <Text style={[styles.headerCell, { flex: 1 }]}>Flat</Text>
-      <Text style={[styles.headerCell, { flex: 1.5 }]}>Time</Text>
+      <Text style={[styles.headerCell, { flex: 1 }]}>Building</Text>
+      <Text style={[styles.headerCell, { flex: 1.5 }]}>Visit Time</Text>
       <Text style={[styles.headerCell, { flex: 1 }]}>Status</Text>
     </View>
   );
@@ -143,20 +107,16 @@ const PresidentVisitorLog: React.FC = () => {
       onPress={() => handleViewDetails(visitor)}
     >
       <View style={[styles.tableCell, { flex: 2.5 }]}>
-        <Text style={styles.visitorName} numberOfLines={1}>{visitor.name}</Text>
-        <Text style={styles.visitorPurpose} numberOfLines={1}>{visitor.purpose}</Text>
+        <Text style={styles.visitorName} numberOfLines={1}>{visitor.visitorName}</Text>
       </View>
-      <Text style={[styles.tableCell, { flex: 1 }]} numberOfLines={1}>{visitor.flatNo}</Text>
+      <Text style={[styles.tableCell, { flex: 1 }]} numberOfLines={1}>{visitor.buildingNumber}</Text>
       <Text style={[styles.tableCell, { flex: 1.5 }]} numberOfLines={1}>
-        {new Date(visitor.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+        {visitor.visitTime}
       </Text>
       <View style={[styles.tableCell, { flex: 1 }]}>
-        <View style={[
-          styles.statusBadge, 
-          visitor.status === "checked-in" ? styles.checkedInBadge : styles.checkedOutBadge
-        ]}>
+        <View style={styles.statusBadge}>
           <Text style={styles.statusText}>
-            {visitor.status === "checked-in" ? "In" : "Out"}
+            Checked In
           </Text>
         </View>
       </View>
@@ -239,15 +199,7 @@ const PresidentVisitorLog: React.FC = () => {
     <View style={styles.statsContainer}>
       <View style={styles.statItem}>
         <Text style={styles.statValue}>{totalVisitors}</Text>
-        <Text style={styles.statLabel}>Total</Text>
-      </View>
-      <View style={styles.statItem}>
-        <Text style={styles.statValue}>{checkedInVisitors}</Text>
-        <Text style={styles.statLabel}>Checked In</Text>
-      </View>
-      <View style={styles.statItem}>
-        <Text style={styles.statValue}>{checkedOutVisitors}</Text>
-        <Text style={styles.statLabel}>Checked Out</Text>
+        <Text style={styles.statLabel}>Total Visitors</Text>
       </View>
     </View>
   );
@@ -275,55 +227,10 @@ const PresidentVisitorLog: React.FC = () => {
         
         <View style={styles.filterButtons}>
           <TouchableOpacity 
-            style={[
-              styles.filterButton, 
-              filterType === 'all' && styles.activeFilterButton
-            ]}
-            onPress={() => setFilterType('all')}
-          >
-            <Text style={[
-              styles.filterButtonText,
-              filterType === 'all' && styles.activeFilterText
-            ]}>All</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.filterButton, 
-              filterType === 'checked-in' && styles.activeFilterButton
-            ]}
-            onPress={() => setFilterType('checked-in')}
-          >
-            <Text style={[
-              styles.filterButtonText,
-              filterType === 'checked-in' && styles.activeFilterText
-            ]}>In</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.filterButton, 
-              filterType === 'checked-out' && styles.activeFilterButton
-            ]}
-            onPress={() => setFilterType('checked-out')}
-          >
-            <Text style={[
-              styles.filterButtonText,
-              filterType === 'checked-out' && styles.activeFilterText
-            ]}>Out</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.filterButton, 
-              isDateFilterActive && styles.activeFilterButton
-            ]}
+            style={[styles.filterButton]}
             onPress={() => setShowDateFilter(true)}
           >
-            <Text style={[
-              styles.filterButtonText,
-              isDateFilterActive && styles.activeFilterText
-            ]}>📅</Text>
+            <Text style={styles.filterButtonText}>📅</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -353,7 +260,7 @@ const PresidentVisitorLog: React.FC = () => {
             <FlatList
               data={filteredVisitors}
               renderItem={({ item }) => <VisitorRow visitor={item} />}
-              keyExtractor={item => item.id.toString()}
+              keyExtractor={item => item._id}
               style={styles.visitorList}
             />
           ) : (
@@ -395,38 +302,23 @@ const PresidentVisitorLog: React.FC = () => {
               <ScrollView style={styles.modalBody}>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Name:</Text>
-                  <Text style={styles.detailValue}>{selectedVisitor.name}</Text>
+                  <Text style={styles.detailValue}>{selectedVisitor.visitorName}</Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Phone:</Text>
-                  <Text style={styles.detailValue}>{selectedVisitor.phone}</Text>
+                  <Text style={styles.detailLabel}>Building Number:</Text>
+                  <Text style={styles.detailValue}>{selectedVisitor.buildingNumber}</Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Flat Number:</Text>
-                  <Text style={styles.detailValue}>{selectedVisitor.flatNo}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Purpose:</Text>
-                  <Text style={styles.detailValue}>{selectedVisitor.purpose}</Text>
+                  <Text style={styles.detailLabel}>Visit Time:</Text>
+                  <Text style={styles.detailValue}>{selectedVisitor.visitTime}</Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Check In:</Text>
-                  <Text style={styles.detailValue}>{formatDateTime(selectedVisitor.checkIn)}</Text>
+                  <Text style={styles.detailValue}>{formatDateTime(selectedVisitor.createdAt)}</Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Text style={styles.detailLabel}>Check Out:</Text>
-                  <Text style={styles.detailValue}>{formatDateTime(selectedVisitor.checkOut)}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Status:</Text>
-                  <View style={[
-                    styles.statusBadge,
-                    selectedVisitor.status === "checked-in" ? styles.checkedInBadge : styles.checkedOutBadge
-                  ]}>
-                    <Text style={styles.statusText}>
-                      {selectedVisitor.status === "checked-in" ? "Checked In" : "Checked Out"}
-                    </Text>
-                  </View>
+                  <Text style={styles.detailValue}>{formatDateTime(selectedVisitor.updatedAt)}</Text>
                 </View>
               </ScrollView>
             )}
@@ -531,16 +423,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 3,
     alignItems: 'center',
   },
-  activeFilterButton: {
-    backgroundColor: '#4a90e2',
-  },
   filterButtonText: {
     color: '#333',
     fontSize: 12,
     fontWeight: '500',
-  },
-  activeFilterText: {
-    color: '#fff',
   },
   visitorsSection: {
     flex: 1,

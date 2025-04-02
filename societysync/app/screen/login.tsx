@@ -91,7 +91,10 @@ const LoginScreen: React.FC = () => {
         });
          // Ensure route is a valid string
       };
-
+      const routesign = (route:any) => {
+        router.push('/screen/SignupScreen');
+      }
+          
   const handleLogin = async () => {
     // Add validation
     if (!email || !password) {
@@ -107,11 +110,24 @@ const LoginScreen: React.FC = () => {
     });
     console.log('Login attempt with:', { email, password });
  
+    localStorage.setItem('token', response.data.token )
   if (response.status === 200) {
     Alert.alert('Success', 'Login successful!');
     if(response.data.user.role=='resident') {
       const id=response.data.user._id;
       handlerouting('/screen/Resident/',id);
+    }
+    if(response.data.user.role=='admin') {
+      const id=response.data.user._id;
+      handlerouting('/screen/Admin/',id);
+    }
+    if(response.data.user.role=='watchman') {
+      const id=response.data.user._id;
+      handlerouting('/screen/Watchman/',id);
+    }
+    if(response.data.user.role=='president') {
+      const id=response.data.user._id;
+      handlerouting('/screen/President/',id);
     }
     
   }
@@ -230,7 +246,7 @@ catch (error) {
             <View style={styles.signupTextContainer}>
               <Text style={styles.signupText}>Don't have an account? </Text>
               <TouchableOpacity
-               onPress={() => navigation.navigate('SignUp')}
+               onPress={routesign}
                >
                 <Text style={styles.signupLink}>Sign Up</Text>
               </TouchableOpacity>

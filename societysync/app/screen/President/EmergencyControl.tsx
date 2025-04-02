@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Modal, TextInput, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// Colors matching second code
+const primaryBlue = '#180DC9';
+const primaryCyan = '#06D9E0';
+
+// Filter button colors
+const allButtonColor = '#5adbff';
+const pendingButtonColor = '#ffaa00';
+const approvedButtonColor = '#00c853';
+const rejectedButtonColor = '#ff3d00';
 
 const EmergencyTypes = {
   MEDICAL: 'Medical',
@@ -113,9 +124,9 @@ const EmergencyControl = () => {
       setScreenWidth(Dimensions.get('window').width);
     };
     
-    Dimensions.addEventListener('change', updateLayout);
+    const subscription = Dimensions.addEventListener('change', updateLayout);
     
-    //return () => Dimensions.removeEventListener('change', updateLayout);
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {
@@ -167,6 +178,16 @@ const EmergencyControl = () => {
     }
   };
 
+  const getFilterButtonColor = (filter: string) => {
+    switch (filter) {
+      case 'all': return allButtonColor;
+      case 'pending': return pendingButtonColor;
+      case 'approved': return approvedButtonColor;
+      case 'rejected': return rejectedButtonColor;
+      default: return allButtonColor;
+    }
+  };
+
   // Determine filter text size based on screen width
   const getFilterTextStyle = () => {
     if (screenWidth < 360) {
@@ -185,21 +206,21 @@ const EmergencyControl = () => {
       return { 
         paddingVertical: 6,
         paddingHorizontal: 4,
-        marginHorizontal: 2
+        minWidth: 60
       };
     } 
     else if (screenWidth < 480) {
       return { 
         paddingVertical: 7,
         paddingHorizontal: 8,
-        marginHorizontal: 3
+        minWidth: 70
       };
     } 
     else {
       return { 
         paddingVertical: 8,
         paddingHorizontal: 12,
-        marginHorizontal: 4
+        minWidth: 80
       };
     }
   };
@@ -218,145 +239,193 @@ const EmergencyControl = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={[styles.headerTitle, screenWidth < 360 ? { fontSize: 18 } : {}]}>
-        President Emergency Approval Panel
-      </Text>
-      
-      {/* Filter buttons */}
-      <View style={styles.filterContainer}>
-        {(['all', 'pending', 'approved', 'rejected'] as FilterOption[]).map((filter) => (
-          <TouchableOpacity 
-            key={filter}
-            style={[ 
-              styles.filterButton, 
-              activeFilter === filter && styles.activeFilter,
-              getFilterButtonStyle()
-            ]} 
-            onPress={() => setActiveFilter(filter)}
-          >
-            <Text style={[ 
-              styles.filterText, 
-              activeFilter === filter && styles.activeFilterText,
-              getFilterTextStyle()
-            ]}>
-              {getFilterText(filter)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      
-      {/* Request count indicator */}
-      <Text style={[styles.countIndicator, screenWidth < 360 ? { fontSize: 12 } : {}]}>
-        Showing {filteredRequests.length} {activeFilter !== 'all' ? activeFilter : ''} request{filteredRequests.length !== 1 ? 's' : ''}
-      </Text>
-      
-      <FlatList 
-        data={filteredRequests} 
-        renderItem={renderRequestItem} 
-        keyExtractor={(item) => item.id} 
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No {activeFilter !== 'all' ? activeFilter : ''} requests found</Text>
-          </View>
-        }
-      />
-
-      {selectedRequest && (
-        <Modal visible={showModal} transparent animationType="slide">
-          <View style={styles.modalContainer}>
-            <View style={[styles.modalContent, screenWidth < 360 ? { width: '90%' } : { width: '80%' }]}>
-              <Text style={styles.modalTitle}>Request Details</Text>
-              <Text>Visitor: {selectedRequest.visitorName}</Text>
-              <Text>Type: {selectedRequest.type}</Text>
-              <Text>Purpose: {selectedRequest.purpose}</Text>
-              <Text>Requested By: {selectedRequest.requestedBy}</Text>
-
-              {selectedRequest.rejectReason && (
-                <Text style={styles.rejectReasonText}>Rejection Reason: {selectedRequest.rejectReason}</Text>
-              )}
-
-              {selectedRequest.status === 'pending' && (
-                <>
-                  <TextInput
-                    placeholder="Reason for rejection (if any)"
-                    style={styles.input}
-                    value={rejectReason}
-                    onChangeText={setRejectReason}
-                  />
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity style={styles.approveButton} onPress={() => approveRequest(selectedRequest.id)}>
-                      <Text style={styles.buttonText}>Approve</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.rejectButton} onPress={() => rejectRequest(selectedRequest.id)}>
-                      <Text style={styles.buttonText}>Reject</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-
-              <TouchableOpacity onPress={() => setShowModal(false)} style={styles.closeButton}>
-                <Text style={styles.closeText}>Close</Text>
+    <LinearGradient
+      colors={[primaryCyan, primaryBlue]}
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <View style={styles.container}>
+        <LinearGradient
+          colors={[primaryCyan, primaryBlue]}
+          style={styles.headerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Text style={[styles.headerTitle, screenWidth < 360 ? { fontSize: 18 } : {}]}>
+            President Emergency Approval Panel
+          </Text>
+        </LinearGradient>
+        
+        {/* Updated Filter container with fixed layout for mobile */}
+        <View style={styles.filterContainer}>
+          <View style={styles.filterRow}>
+            {(['all', 'pending', 'approved', 'rejected'] as FilterOption[]).map((filter) => (
+              <TouchableOpacity 
+                key={filter}
+                style={[ 
+                  styles.filterButton, 
+                  {
+                    backgroundColor: getFilterButtonColor(filter),
+                    opacity: activeFilter === filter ? 1 : 0.7,
+                  },
+                  getFilterButtonStyle()
+                ]} 
+                onPress={() => setActiveFilter(filter)}
+              >
+                <Text style={[ 
+                  styles.filterText, 
+                  activeFilter === filter && styles.activeFilterText,
+                  getFilterTextStyle()
+                ]}>
+                  {getFilterText(filter)}
+                </Text>
               </TouchableOpacity>
-            </View>
+            ))}
           </View>
-        </Modal>
-      )}
-    </View>
+        </View>
+        
+        {/* Request count indicator with black text color */}
+        <Text style={[styles.countIndicator, screenWidth < 360 ? { fontSize: 12 } : {}]}>
+          Showing {filteredRequests.length} {activeFilter !== 'all' ? activeFilter : ''} request{filteredRequests.length !== 1 ? 's' : ''}
+        </Text>
+        
+        <FlatList 
+          data={filteredRequests} 
+          renderItem={renderRequestItem} 
+          keyExtractor={(item) => item.id} 
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No {activeFilter !== 'all' ? activeFilter : ''} requests found</Text>
+            </View>
+          }
+        />
+
+        {selectedRequest && (
+          <Modal visible={showModal} transparent animationType="slide">
+            <View style={styles.modalContainer}>
+              <View style={[styles.modalContent, screenWidth < 360 ? { width: '90%' } : { width: '80%' }]}>
+                <Text style={styles.modalTitle}>Request Details</Text>
+                <Text>Visitor: {selectedRequest.visitorName}</Text>
+                <Text>Type: {selectedRequest.type}</Text>
+                <Text>Purpose: {selectedRequest.purpose}</Text>
+                <Text>Requested By: {selectedRequest.requestedBy}</Text>
+
+                {selectedRequest.rejectReason && (
+                  <Text style={styles.rejectReasonText}>Rejection Reason: {selectedRequest.rejectReason}</Text>
+                )}
+
+                {selectedRequest.status === 'pending' && (
+                  <>
+                    <TextInput
+                      placeholder="Reason for rejection (if any)"
+                      style={styles.input}
+                      value={rejectReason}
+                      onChangeText={setRejectReason}
+                    />
+                    <View style={styles.modalButtons}>
+                      <TouchableOpacity style={styles.approveButton} onPress={() => approveRequest(selectedRequest.id)}>
+                        <Text style={styles.buttonText}>Approve</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.rejectButton} onPress={() => rejectRequest(selectedRequest.id)}>
+                        <Text style={styles.buttonText}>Reject</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+
+                <TouchableOpacity onPress={() => setShowModal(false)} style={styles.closeButton}>
+                  <Text style={styles.closeText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        )}
+      </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f4f4f4' },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
-  card: { backgroundColor: '#fff', padding: 12, marginBottom: 10, borderRadius: 8, elevation: 2 },
+  gradientContainer: {
+    flex: 1,
+  },
+  container: { 
+    flex: 1, 
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  headerGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  headerTitle: { 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    color: '#fff',
+  },
+  card: { 
+    backgroundColor: '#fff', 
+    padding: 12, 
+    marginBottom: 10, 
+    borderRadius: 8, 
+    elevation: 2,
+    marginHorizontal: 16,
+  },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   visitorName: { fontSize: 16, fontWeight: 'bold' },
   badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   badgeText: { color: '#fff', fontSize: 12 },
-  approvedBadge: { backgroundColor: 'green' },
-  rejectedBadge: { backgroundColor: 'red' },
-  pendingBadge: { backgroundColor: 'orange' },
+  approvedBadge: { backgroundColor: approvedButtonColor },
+  rejectedBadge: { backgroundColor: rejectedButtonColor },
+  pendingBadge: { backgroundColor: pendingButtonColor },
   type: { fontSize: 14, fontWeight: 'bold', color: '#555' },
   purpose: { fontSize: 14, color: '#666', marginTop: 4 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   timestamp: { fontSize: 12, color: '#999' },
-  list: { paddingBottom: 20 },
+  list: { paddingBottom: 20, paddingTop: 10 },
   modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
   modalContent: { backgroundColor: '#fff', padding: 20, borderRadius: 8 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
   modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
-  approveButton: { backgroundColor: 'green', padding: 10, borderRadius: 8 },
-  rejectButton: { backgroundColor: 'red', padding: 10, borderRadius: 8 },
+  approveButton: { backgroundColor: approvedButtonColor, padding: 10, borderRadius: 8 },
+  rejectButton: { backgroundColor: rejectedButtonColor, padding: 10, borderRadius: 8 },
   buttonText: { color: '#fff', fontWeight: 'bold' },
   input: { borderColor: '#ccc', borderWidth: 1, borderRadius: 8, padding: 8, marginTop: 10 },
   closeButton: { marginTop: 20, alignSelf: 'center' },
   closeText: { color: '#007bff', fontWeight: 'bold' },
   rejectReasonText: { marginTop: 10, color: 'red', fontStyle: 'italic' },
+  // Updated filter container structure for better mobile support
   filterContainer: { 
-    flexDirection: 'row', 
-    marginBottom: 16, 
-    justifyContent: 'space-between' 
+    marginTop: 16,
+    marginBottom: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  // Added a filter row to maintain horizontal layout
+  filterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'nowrap', // Prevent wrapping to new line
   },
   filterButton: { 
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: '#e0e0e0',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: 'rgba(255,255,255,0.5)',
     flex: 1,
-    marginHorizontal: 4
-  },
-  activeFilter: { 
-    backgroundColor: '#007bff', 
-    borderColor: '#0056b3' 
+    marginHorizontal: 2,
+    elevation: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   filterText: { 
     textAlign: 'center', 
     fontSize: 14,
-    color: '#333' 
+    color: '#fff',
+    fontWeight: '500',
   },
   activeFilterText: { 
     color: '#fff', 
@@ -364,9 +433,10 @@ const styles = StyleSheet.create({
   },
   countIndicator: {
     fontSize: 14,
-    color: '#666',
+    color: '#000',
     marginBottom: 8,
-    fontStyle: 'italic'
+    fontStyle: 'italic',
+    paddingHorizontal: 16,
   },
   emptyContainer: {
     padding: 30,
@@ -375,7 +445,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#999',
+    color: '#fff',
     fontStyle: 'italic'
   }
 });

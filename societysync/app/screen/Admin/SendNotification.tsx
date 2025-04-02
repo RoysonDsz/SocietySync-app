@@ -5,15 +5,14 @@ import {
   StyleSheet, 
   TextInput, 
   TouchableOpacity, 
-  Switch, 
   ScrollView, 
   Alert,
-  ActivityIndicator,
-  Modal
+  ActivityIndicator
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Bell, AlertTriangle, Send, Info, Calendar, Shield, Coffee, X } from 'lucide-react-native';
+import { Bell, Send } from 'lucide-react-native';
 // import {axios} from 'axios';
+
 // Define navigation stack types
 type RootStackParamList = {
   SendNotifications: { 
@@ -35,10 +34,8 @@ const SendNotifications: React.FC<Props> = ({ route, navigation }) => {
   const [isUrgent, setIsUrgent] = useState(false);
   const [selectedBlocks, setSelectedBlocks] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
-  {
-  
-  }
+
+  // Initialize selected blocks state
   useEffect(() => {
     const initialBlocksState: Record<string, boolean> = {};
     building.blocks.forEach(block => {
@@ -48,8 +45,6 @@ const SendNotifications: React.FC<Props> = ({ route, navigation }) => {
   }, [building.blocks]);
 
   const handleSendNotification = async () => {
-    
-    
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a notification title');
       return;
@@ -73,31 +68,12 @@ const SendNotifications: React.FC<Props> = ({ route, navigation }) => {
       blocks: Object.keys(selectedBlocks).filter(key => selectedBlocks[key]),
       timestamp: new Date().toISOString(),
     };
-    
+
     setLoading(true);
 
-    try {
-      {
-        /*
-        axios.post('https://example.com/api/user', notificationData)
-      .then(response => {
-          // This block will execute if the request is successful
-          console.log('Success:', response.data);
-      })
-      .catch(error => {
-          // This block will execute if there's an error in the request
-          console.error('Error:', error);
-      });
-         */
-      }
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulated API call
-      Alert.alert('Success', 'Notification sent successfully!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to send notification. Please try again.');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    // Add API call logic here
+    // await axios.post('/api/notifications', notificationData);
+    setLoading(false);
   };
 
   return (
@@ -146,6 +122,7 @@ const SendNotifications: React.FC<Props> = ({ route, navigation }) => {
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },

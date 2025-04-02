@@ -1,181 +1,411 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Linking } from 'react-native';
-import { PlusCircle, Pencil, Trash2, Phone, Mail } from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Modal, Linking, Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import axios from 'axios';
 
-type Block = {
+interface Resident {
+  _id: string;
   name: string;
-};
+  flatNumber: string;
+  phoneNumber: string;
+  buildingName: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-type Resident = {
-  id: string;
-  name: string;
-  flat: string;
-  block: string;
-  phone?: string;
-  email?: string;
-};
-
-type Building = {
-  id: string;
-  name: string;
-  blocks: Block[];
-};
-
-const ResidentList = ({ route, navigation }: any) => {
-  const { building }: { building: Building } = route.params;
-
-  // Resident state
-  const [residents, setResidents] = useState<Resident[]>([
-    { id: '1', name: 'Alice Brown', flat: 'A-101', block: 'A', phone: '1234567890', email: 'alice@example.com' },
-    { id: '2', name: 'Bob Smith', flat: 'A-102', block: 'A', phone: '0987654321', email: 'bob@example.com' },
-    { id: '3', name: 'Charlie Johnson', flat: 'B-201', block: 'B', phone: '9876543210', email: 'charlie@example.com' },
-    { id: '4', name: 'David White', flat: 'B-202', block: 'B', phone: '8765432109', email: 'david@example.com' },
-    { id: '5', name: 'Emma Green', flat: 'C-301', block: 'C', phone: '7654321098', email: 'emma@example.com' }
-  ]);
+const PResidentLogBook: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedResident, setSelectedResident] = useState<Resident | null>(null);
+  const [showResidentModal, setShowResidentModal] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [manageModeIsEdit, setManageModeIsEdit] = useState(false);
   
-  // Get a filtered list of residents that belong to this building
-  const buildingResidents = residents.filter((r) => 
-    building.blocks.some((b: Block) => b.name === r.block)
-  );
+  const [residentForm, setResidentForm] = useState<Omit<Resident, '_id'>>({
+    name: '',
+    flatNumber: '',
+    phoneNumber: '',
+    buildingName: '',
+    email: '',
+    role: 'resident',
+    createdAt: '',
+    updatedAt: ''
+  });
 
-  // Handle navigating to generate bills page
-  const handleGenerateBill = (resident: Resident) => {
-    navigation.navigate('GenerateBills', { resident });
+  const [residents, setResidents] = useState<Resident[]>([]);
+
+  useEffect(() => {
+    fetchResidents();
+  }, []);
+
+  const fetchResidents = async () => {
+    try {
+      const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/users');
+      const residentsData = response.data.filter((user: any) => user.role === 'resident');
+      setResidents(residentsData);
+    } catch (error) {
+      console.error('Error fetching residents:', error);
+      Alert.alert('Error', 'Failed to fetch residents. Please try again later.');
+    }
   };
 
-  // Handle making a phone call
-  const handlePhoneCall = (phone: string) => {
-    Linking.openURL(`tel:${phone}`);
+  const callResident = (phoneNumber: string) => {
+    Linking.openURL(`tel:${phoneNumber}`);
   };
 
-  // Handle sending an email
-  const handleEmail = (email: string) => {
-    Linking.openURL(`mailto:${email}`);
+  const openAddResidentModal = () => {
+    setResidentForm({
+      name: '',
+      flatNumber: '',
+      phoneNumber: '',
+      buildingName: '',
+      email: '',
+      role: 'resident',
+      createdAt: '',
+      updatedAt: ''
+    });
+    setManageModeIsEdit(false);
+    setShowManageModal(true);
   };
 
-  // Handle adding a new resident
-  const handleAddResident = () => {
-    if (building.blocks.length === 0) {
-      Alert.alert(
-        "No Blocks Available",
-        "Please add blocks to this building before adding residents.",
-        [{ text: "OK" }]
-      );
+  const openEditResidentModal = (resident: Resident) => {
+    setResidentForm({
+      name: resident.name,
+      flatNumber: resident.flatNumber,
+      phoneNumber: resident.phoneNumber,
+      buildingName: resident.buildingName,
+      email: resident.email,
+      role: resident.role,
+      createdAt: resident.createdAt,
+      updatedAt: resident.updatedAt
+    });
+    setSelectedResident(resident);
+    setManageModeIsEdit(true);
+    setShowManageModal(true);
+  };
+
+  const handleFormChange = (field: keyof Omit<Resident, '_id'>, value: string) => {
+    setResidentForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const saveResident = () => {
+    if (!residentForm.name || !residentForm.flatNumber || !residentForm.phoneNumber || !residentForm.buildingName || !residentForm.email) {
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    navigation.navigate('ManageResident', { 
-      building,
-      selectedBlock: building.blocks[0].name,
-      onSave: (newResident: Resident) => {
-        const newId = (residents.length > 0 ? Math.max(...residents.map(r => parseInt(r.id))) + 1 : 1).toString();
-        setResidents([...residents, { ...newResident, id: newId }]);
-      }
-    });
+    if (manageModeIsEdit && selectedResident) {
+      const updatedResidents = residents.map(r => 
+        r._id === selectedResident._id 
+          ? { ...r, ...residentForm } 
+          : r
+      );
+      setResidents(updatedResidents);
+      Alert.alert('Success', 'Resident updated successfully');
+    } else {
+      const newResident: Resident = {
+        _id: Date.now().toString(),
+        ...residentForm
+      };
+      setResidents([...residents, newResident]);
+      Alert.alert('Success', 'Resident added successfully');
+    }
+    setShowManageModal(false);
   };
 
-  // Handle editing a resident
-  const handleEditResident = (resident: Resident) => {
-    navigation.navigate('ManageResident', { 
-      building,
-      resident,
-      onSave: (updatedResident: Resident) => {
-        setResidents(residents.map(r => r.id === updatedResident.id ? updatedResident : r));
-      }
-    });
-  };
-
-  // Handle deleting a resident
-  const handleDeleteResident = (resident: Resident) => {
+  const deleteResident = (id: string) => {
+    if (!id) {
+      console.error("Delete called with invalid ID");
+      return;
+    }
+    
     Alert.alert(
-      "Delete Resident",
-      `Are you sure you want to delete ${resident.name}?`,
+      'Delete Resident',
+      'Are you sure you want to remove this resident?',
       [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          onPress: () => setResidents(residents.filter(r => r.id !== resident.id)),
-          style: "destructive"
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Delete',
+          onPress: () => {
+            const updatedResidents = residents.filter(resident => resident._id !== id);
+            setResidents(updatedResidents);
+            setShowResidentModal(false);
+            setSelectedResident(null);
+            Alert.alert('Success', 'Resident removed successfully');
+          },
+          style: 'destructive'
         }
       ]
     );
   };
 
+  const renderResidentItem = ({ item }: { item: Resident }) => (
+    <TouchableOpacity 
+      style={styles.listItem}
+      onPress={() => {
+        setSelectedResident(item);
+        setShowResidentModal(true);
+      }}
+    >
+      <View style={styles.listItemContent}>
+        <View style={styles.avatarContainer}>
+          <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+        </View>
+        <View style={styles.listItemText}>
+          <Text style={styles.listItemTitle}>{item.name}</Text>
+          <Text style={styles.listItemSubtitle}>Flat: {item.flatNumber}, Building: {item.buildingName}</Text>
+        </View>
+      </View>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={[styles.iconButton, styles.callButton]}
+          onPress={() => callResident(item.phoneNumber)}
+        >
+          <MaterialCommunityIcons name="phone" size={20} color="#000" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.iconButton, styles.editButton]}
+          onPress={() => openEditResidentModal(item)}
+        >
+          <MaterialCommunityIcons name="pencil" size={20} color="#000" />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const filteredResidents = residents.filter(resident => 
+    resident.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    resident.flatNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    resident.buildingName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Residents in {building.name}</Text>
-      
-      <FlatList
-        data={buildingResidents}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            onPress={() => handleGenerateBill(item)}
-            style={styles.residentCard}
-          >
-            <View style={styles.residentInfo}>
-              <Text style={styles.residentName}>{item.name}</Text>
-              <Text style={styles.flatInfo}>Flat: {item.flat} | Block: {item.block}</Text>
-              
-              {item.phone && (
-                <TouchableOpacity 
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handlePhoneCall(item.phone!);
-                  }}
-                  style={styles.contactRow}
-                >
-                  <Phone size={16} color="#3a86ff" />
-                  <Text style={styles.contactInfo}>{item.phone}</Text>
-                </TouchableOpacity>
-              )}
-              
-              {item.email && (
-                <TouchableOpacity 
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleEmail(item.email!);
-                  }}
-                  style={styles.contactRow}
-                >
-                  <Mail size={16} color="#3a86ff" />
-                  <Text style={styles.contactInfo}>{item.email}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.actionButtons}>
-              <TouchableOpacity 
-                onPress={(e) => {
-                  e.stopPropagation(); // Prevent triggering the parent's onPress
-                  handleEditResident(item);
-                }} 
-                style={styles.editButton}
-              >
-                <Pencil size={18} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={(e) => {
-                  e.stopPropagation(); // Prevent triggering the parent's onPress
-                  handleDeleteResident(item);
-                }} 
-                style={styles.deleteButton}
-              >
-                <Trash2 size={18} color="white" />
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No residents found for this building.</Text>
-          </View>
-        }
-      />
+      <View style={styles.headerContainer}>
+        <View style={styles.searchContainer}>
+          <MaterialCommunityIcons name="magnify" size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search residents..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery !== '' && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <MaterialCommunityIcons name="close-circle" size={20} color="#666" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity style={styles.addButton} onPress={openAddResidentModal}>
+          <MaterialCommunityIcons name="plus" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity style={styles.addButton} onPress={handleAddResident}>
-        <PlusCircle size={22} color="white" />
-        <Text style={styles.addButtonText}>Add Resident</Text>
-      </TouchableOpacity>
+      {residents.length === 0 ? (
+        <View style={styles.emptyStateContainer}>
+          <MaterialCommunityIcons name="account-off" size={64} color="#ccc" />
+          <Text style={styles.emptyStateText}>No residents found</Text>
+          <TouchableOpacity style={styles.emptyStateButton} onPress={openAddResidentModal}>
+            <Text style={styles.emptyStateButtonText}>Add Resident</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredResidents}
+          renderItem={renderResidentItem}
+          keyExtractor={item => item._id}
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
+
+      <Modal
+        visible={showResidentModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowResidentModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Resident Details</Text>
+              <TouchableOpacity onPress={() => setShowResidentModal(false)}>
+                <MaterialCommunityIcons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            {selectedResident && (
+              <View style={styles.residentDetailContainer}>
+                <View style={styles.residentAvatar}>
+                  <Text style={styles.residentAvatarText}>{selectedResident.name.charAt(0)}</Text>
+                </View>
+                <Text style={styles.residentName}>{selectedResident.name}</Text>
+                
+                <View style={styles.residentDetailsCards}>
+                  <View style={styles.contactCard}>
+                    <MaterialCommunityIcons name="home" size={22} color="#333" style={styles.contactCardIcon} />
+                    <Text style={styles.contactCardTitle}>Flat Number</Text>
+                    <Text style={styles.contactCardValue}>{selectedResident.flatNumber}</Text>
+                  </View>
+                  <View style={styles.contactCard}>
+                    <MaterialCommunityIcons name="office-building" size={22} color="#333" style={styles.contactCardIcon} />
+                    <Text style={styles.contactCardTitle}>Building Name</Text>
+                    <Text style={styles.contactCardValue}>{selectedResident.buildingName}</Text>
+                  </View>
+                  <View style={styles.contactCard}>
+                    <MaterialCommunityIcons name="phone" size={22} color="#333" style={styles.contactCardIcon} />
+                    <Text style={styles.contactCardTitle}>Phone Number</Text>
+                    <Text style={styles.contactCardValue}>{selectedResident.phoneNumber}</Text>
+                  </View>
+                  <View style={styles.contactCard}>
+                    <MaterialCommunityIcons name="email" size={22} color="#333" style={styles.contactCardIcon} />
+                    <Text style={styles.contactCardTitle}>Email</Text>
+                    <Text style={styles.contactCardValue}>{selectedResident.email}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.residentActions}>
+                  <TouchableOpacity 
+                    style={styles.residentActionCard}
+                    onPress={() => {
+                      callResident(selectedResident.phoneNumber);
+                      setShowResidentModal(false);
+                    }}
+                  >
+                    <View style={[styles.residentActionIcon, {backgroundColor: '#e3f2fd'}]}>
+                      <MaterialCommunityIcons name="phone" size={24} color="#1976d2" />
+                    </View>
+                    <Text style={styles.residentActionText}>Call</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.residentActionCard}
+                    onPress={() => {
+                      setShowResidentModal(false);
+                      openEditResidentModal(selectedResident);
+                    }}
+                  >
+                    <View style={[styles.residentActionIcon, {backgroundColor: '#fff9c4'}]}>
+                      <MaterialCommunityIcons name="pencil" size={24} color="#fbc02d" />
+                    </View>
+                    <Text style={styles.residentActionText}>Edit</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.residentActionCard}
+                    onPress={() => deleteResident(selectedResident._id)}
+                  >
+                    <View style={[styles.residentActionIcon, {backgroundColor: '#ffebee'}]}>
+                      <MaterialCommunityIcons name="delete" size={24} color="#c62828" />
+                    </View>
+                    <Text style={styles.residentActionText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showManageModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowManageModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <ScrollView contentContainerStyle={styles.modalScrollView}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {manageModeIsEdit ? 'Edit Resident' : 'Add New Resident'}
+                </Text>
+                <TouchableOpacity onPress={() => setShowManageModal(false)}>
+                  <MaterialCommunityIcons name="close" size={24} color="#333" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.formContainer}>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Name *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter resident name"
+                    value={residentForm.name}
+                    onChangeText={(value) => handleFormChange('name', value)}
+                  />
+                </View>
+                
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Flat Number *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g. A-101"
+                    value={residentForm.flatNumber}
+                    onChangeText={(value) => handleFormChange('flatNumber', value)}
+                  />
+                </View>
+                
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Building Name *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="e.g. Building A"
+                    value={residentForm.buildingName}
+                    onChangeText={(value) => handleFormChange('buildingName', value)}
+                  />
+                </View>
+                
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Phone Number *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter phone number"
+                    value={residentForm.phoneNumber}
+                    onChangeText={(value) => handleFormChange('phoneNumber', value)}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+                
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Email *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter email"
+                    value={residentForm.email}
+                    onChangeText={(value) => handleFormChange('email', value)}
+                    keyboardType="email-address"
+                  />
+                </View>
+
+                <View style={styles.formActions}>
+                  <TouchableOpacity
+                    style={[styles.formButton, styles.cancelButton]}
+                    onPress={() => setShowManageModal(false)}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.formButton, styles.saveButton]}
+                    onPress={saveResident}
+                  >
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -183,91 +413,282 @@ const ResidentList = ({ route, navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f8fafc'
+    backgroundColor: '#fff',
+    paddingTop: 24,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#333'
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginTop: 12,
+    marginBottom: 12,
   },
-  residentCard: {
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    height: 48,
+    marginRight: 12,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 16,
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1976d2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  listContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  emptyStateButton: {
+    backgroundColor: '#1976d2',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  emptyStateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  listItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 16,
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    elevation: 2,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.5,
+    elevation: 2,
   },
-  residentInfo: {
+  listItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  residentName: {
-    fontSize: 18,
-    fontWeight: 'bold'
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#cfd8dc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  flatInfo: {
+  avatarText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  listItemText: {
+    flex: 1,
+  },
+  listItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  listItemSubtitle: {
     fontSize: 14,
     color: '#666',
-    marginTop: 2
-  },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4
-  },
-  contactInfo: {
-    fontSize: 14,
-    color: '#3a86ff',
-    marginLeft: 6
   },
   actionButtons: {
-    flexDirection: 'row'
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+    backgroundColor: '#f5f5f5',
+  },
+  callButton: {
+    backgroundColor: '#e8f5e9',
   },
   editButton: {
-    backgroundColor: '#4cc9f0',
-    padding: 8,
-    borderRadius: 6,
-    marginRight: 6
+    backgroundColor: '#fff9c4',
   },
-  deleteButton: {
-    backgroundColor: '#ef476f',
-    padding: 8,
-    borderRadius: 6
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
-  addButton: {
-    flexDirection: 'row',
-    backgroundColor: '#4361ee',
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20
+  modalScrollView: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
-  addButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    marginLeft: 6
-  },
-  emptyContainer: {
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+  modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    marginVertical: 20
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    maxHeight: '90%',
   },
-  emptyText: {
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  residentDetailContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  residentAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#cfd8dc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  residentAvatarText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  residentName: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 16,
+  },
+  residentDetailsCards: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  contactCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f5f5f5',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  contactCardIcon: {
+    marginRight: 16,
+  },
+  contactCardTitle: {
     fontSize: 16,
-    color: '#666'
-  }
+    fontWeight: '500',
+    color: '#666',
+  },
+  contactCardValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+  },
+  residentActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  residentActionCard: {
+    alignItems: 'center',
+    width: '33%',
+  },
+  residentActionIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  residentActionText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  formContainer: {
+    width: '100%',
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 8,
+  },
+  formInput: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 16,
+  },
+  formActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 24,
+  },
+  formButton: {
+    borderRadius: 8,
+    padding: 14,
+    width: '48%',
+    alignItems: 'center',
+  },
+  saveButton: {
+    backgroundColor: '#1976d2',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    backgroundColor: '#f5f5f5',
+  },
+  cancelButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
-export default ResidentList;
+export default PResidentLogBook;

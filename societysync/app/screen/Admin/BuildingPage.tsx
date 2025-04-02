@@ -1,19 +1,34 @@
-import React from 'react';
+import React,{useState, useEffect} from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { Building, Users, MapPin, Calendar, Bell, BarChart, FileText } from 'lucide-react-native';
 import { Shield } from 'lucide-react-native';
+import axios from 'axios';
 
 
 const BuildingPage = ({ route, navigation }:any) => {
   const { building } = route.params;
-
+  const [buildingData, setBuildingData] = useState([]);
   const handleBlockPress = (block:any) => {
     navigation.navigate('ResidentList', { 
       building,
       selectedBlock: block.name
     });
   };
-
+  const getBuildingDetails = async () => {
+    try {
+      const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/${building}`);
+      // Handle the response data as needed
+      console.log(response)
+      setBuildingData(response.data);
+    }
+    catch (error) { 
+      console.error('Error fetching building details:', error);
+    }
+  }
+  useEffect(() => 
+  { 
+    getBuildingDetails();
+    },[]);
   const handleViewVisitorLogs = () => {
     navigation.navigate('VisitorLogs', { building });
   };
@@ -31,7 +46,7 @@ const BuildingPage = ({ route, navigation }:any) => {
 
   };
   const handleWatchman = () => {
-    navigation.navigate('watchmanSignup', { building });
+    navigation.navigate('WatchmanSignup', { building });
 
   };
 
@@ -41,8 +56,8 @@ const BuildingPage = ({ route, navigation }:any) => {
         {/* Header Section */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <Text style={styles.heading}>{building.name}</Text>
-            <Text style={styles.subheading}>{building.address}</Text>
+            <Text style={styles.heading}>{buildingData.buildingName}</Text>
+            <Text style={styles.subheading}>{buildingData.location}</Text>
           </View>
         </View>
         
@@ -50,11 +65,11 @@ const BuildingPage = ({ route, navigation }:any) => {
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <Building size={20} color="#4361ee" style={styles.infoIcon} />
-            <Text style={styles.infoText}>Total Flats: {building.totalFlats}</Text>
+            <Text style={styles.infoText}>Total Flats: {buildingData.numberOfFlats}</Text>
           </View>
           <View style={styles.infoRow}>
             <MapPin size={20} color="#4361ee" style={styles.infoIcon} />
-            <Text style={styles.infoText}>{building.address}</Text>
+            <Text style={styles.infoText}>{buildingData.location}</Text>
           </View>
           {building.president && (
             <View style={styles.infoRow}>

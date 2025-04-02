@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "expo-linear-gradient": "^14.0.2",
+    "prop-types": "^15.8.1"
+  }
+}

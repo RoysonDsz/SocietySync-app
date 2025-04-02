@@ -4,7 +4,7 @@ import { assignFlat, deleteResidentById, getAllResidents, getResidentById, getRe
 
 const assignRouter = express.Router();
 
-assignRouter.post('/:buildingNumber/assign/:residentEmail', assignFlat);
+assignRouter.post('/:buildingName/assign/:residentEmail', assignFlat);
 assignRouter.get('/', getAllResidents);
 assignRouter.get('/:id/residents', getResidentsForBuilding);
 assignRouter.get('/:id', getResidentById);

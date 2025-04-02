@@ -9,7 +9,7 @@ const assignSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    buildingNumber:{
+    buildingName:{
         type: String,
         required: true
     },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,73 +9,20 @@ import {
   Switch,
   Alert,
   Modal,
-  FlatList,
-  Image
+  FlatList
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import axios from 'axios';
 
-// Define types
-interface Resident {
-  id: string;
-  name: string;
-  flatNumber: string;
-  phoneNumber: string;
-}
+// Primary colors from ComplaintsPage
+const primaryBlue = '#180DC9';
+const primaryCyan = '#06D9E0';
 
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  isUrgent: boolean;
-  timestamp: string;
-  sentTo: string[]; // Array of resident IDs
-  sentByPresident: boolean;
-}
+// Dummy building ID for fetching residents (you can replace this with the actual building ID as needed)
+const currentBuildingId = 'A'; // Assuming we are fetching for Building A
 
-// Dummy residents data
-const dummyResidents: Resident[] = [
-  { id: '1', name: 'John Smith', flatNumber: 'A101', phoneNumber: '555-123-4567' },
-  { id: '2', name: 'Sarah Johnson', flatNumber: 'A102', phoneNumber: '555-234-5678' },
-  { id: '3', name: 'Michael Brown', flatNumber: 'A201', phoneNumber: '555-345-6789' },
-  { id: '4', name: 'Emily Davis', flatNumber: 'A202', phoneNumber: '555-456-7890' },
-  { id: '5', name: 'Robert Wilson', flatNumber: 'B101', phoneNumber: '555-567-8901' },
-  { id: '6', name: 'Jennifer Lee', flatNumber: 'B102', phoneNumber: '555-678-9012' },
-  { id: '7', name: 'David Martinez', flatNumber: 'B201', phoneNumber: '555-789-0123' },
-  { id: '8', name: 'Lisa Taylor', flatNumber: 'B202', phoneNumber: '555-890-1234' },
-  { id: '9', name: 'Thomas Anderson', flatNumber: 'C101', phoneNumber: '555-901-2345' },
-  { id: '10', name: 'Jessica White', flatNumber: 'C102', phoneNumber: '555-012-3456' },
-  { id: '11', name: 'Daniel Clark', flatNumber: 'C201', phoneNumber: '555-123-4567' },
-  { id: '12', name: 'Michelle Lewis', flatNumber: 'C202', phoneNumber: '555-234-5678' },
-  { id: '13', name: 'James Walker', flatNumber: 'D101', phoneNumber: '555-345-6789' },
-  { id: '14', name: 'Patricia Allen', flatNumber: 'D102', phoneNumber: '555-456-7890' },
-  { id: '15', name: 'Richard Young', flatNumber: 'D201', phoneNumber: '555-567-8901' },
-  { id: '16', name: 'Karen Harris', flatNumber: 'D202', phoneNumber: '555-678-9012' },
-];
-
-// Sample notifications for demonstration
-const sampleNotifications: Notification[] = [
-  {
-    id: '1',
-    title: 'Water Supply Interruption',
-    message: 'Due to maintenance work, water supply will be interrupted tomorrow from 10 AM to 2 PM. Please store water accordingly.',
-    isUrgent: true,
-    timestamp: '2025-03-22T09:30:00.000Z',
-    sentTo: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'],
-    sentByPresident: true
-  },
-  {
-    id: '2',
-    title: 'Monthly Association Meeting',
-    message: 'Reminder for our monthly association meeting this Saturday at 6 PM in the community hall. Agenda includes discussion on new security measures and garden renovation.',
-    isUrgent: false,
-    timestamp: '2025-03-20T15:45:00.000Z',
-    sentTo: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'],
-    sentByPresident: true
-  }
-];
-
-const BroadcastSystem: React.FC<{ residents?: Resident[], presidentName?: string }> = ({ 
-  residents = dummyResidents, // Use dummy residents as default
+const BroadcastSystem: React.FC<{ presidentName?: string }> = ({ 
   presidentName = "Maria Rodriguez" // Provide default president name
 }) => {
   // State for notification being created
@@ -88,9 +35,35 @@ const BroadcastSystem: React.FC<{ residents?: Resident[], presidentName?: string
   const [isPinned, setIsPinned] = useState(false);
   
   // State for notification history
-  const [notifications, setNotifications] = useState<Notification[]>(sampleNotifications);
+  const [notifications, setNotifications] = useState<any[]>([]); // Adjusted type for notifications
   const [showHistory, setShowHistory] = useState(false);
   
+  // State for residents and loading state
+  const [residents, setResidents] = useState<any[]>([]); // Adjusted type for residents
+  const [loadingResidents, setLoadingResidents] = useState(true);
+
+  useEffect(() => {
+    // Fetch residents from backend based on current building ID
+    axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/users`)
+      .then(response => {
+        setResidents(response.data);
+        setLoadingResidents(false); // Stop loading once residents are fetched
+      })
+      .catch(error => {
+        console.error('Error fetching residents:', error);
+        setLoadingResidents(false); // Stop loading in case of an error
+      });
+
+    // Fetch notifications when the component is mounted
+    axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/notification/get')
+      .then(response => {
+        setNotifications(response.data.notifications);
+      })
+      .catch(error => {
+        console.error('Error fetching notifications:', error);
+      });
+  }, []);
+
   // Handle select all residents
   const handleSelectAll = () => {
     if (selectAll) {
@@ -100,7 +73,7 @@ const BroadcastSystem: React.FC<{ residents?: Resident[], presidentName?: string
     }
     setSelectAll(!selectAll);
   };
-  
+
   // Handle toggling a single resident selection
   const toggleResident = (residentId: string) => {
     if (selectedResidents.includes(residentId)) {
@@ -113,50 +86,42 @@ const BroadcastSystem: React.FC<{ residents?: Resident[], presidentName?: string
       }
     }
   };
-  
-  // Send notification
+
+  // Send notification to backend
   const sendNotification = () => {
     if (!title.trim()) {
       Alert.alert("Error", "Please enter a notification title");
       return;
     }
-    
+
     if (!message.trim()) {
       Alert.alert("Error", "Please enter a notification message");
       return;
     }
-    
+
     if (selectedResidents.length === 0) {
       Alert.alert("Error", "Please select at least one resident");
       return;
     }
-    
-    // Create new notification object
-    const newNotification: Notification = {
-      id: Date.now().toString(),
+
+    // Send the notification to the backend
+    axios.post('https://mrnzp03x-5050.inc1.devtunnels.ms/api/notification/create', {
+      name:presidentName,
+      role:'President',
       title: title.trim(),
       message: message.trim(),
-      isUrgent,
-      timestamp: new Date().toISOString(),
-      sentTo: [...selectedResidents],
-      sentByPresident: true
-    };
-    
-    // Add to notifications history
-    setNotifications([newNotification, ...notifications]);
-    
-    // In a real app, here you would make API calls to send SMS, push notifications, emails, etc.
-    
-    // Show success message
-    Alert.alert(
-      "Success", 
-      `Presidential announcement sent to ${selectedResidents.length} resident${selectedResidents.length > 1 ? 's' : ''}`
-    );
-    
-    // Reset form
-    resetForm();
+      sentTo: selectedResidents,
+    })
+    .then(response => {
+      Alert.alert("Success", `Notification sent successfully to ${selectedResidents.length} resident${selectedResidents.length > 1 ? 's' : ''}`);
+      resetForm(); // Reset the form after sending the notification
+    })
+    .catch(error => {
+      Alert.alert("Error", "There was an error sending the notification.");
+      console.error('Error sending notification:', error);
+    });
   };
-  
+
   // Reset form
   const resetForm = () => {
     setTitle('');
@@ -166,26 +131,26 @@ const BroadcastSystem: React.FC<{ residents?: Resident[], presidentName?: string
     setSelectedResidents([]);
     setSelectAll(false);
   };
-  
+
   // Get resident name by ID
   const getResidentName = (id: string): string => {
     const resident = residents.find(r => r.id === id);
     return resident ? resident.name : 'Unknown';
   };
-  
+
   // Get count of selected residents by building/block
   const getSelectionSummary = (): string => {
     if (selectedResidents.length === 0) {
       return "No residents selected";
     }
-    
+
     if (selectedResidents.length === residents.length) {
       return "All residents selected";
     }
-    
+
     // Group by building/block (first character of flat number)
     const blocks: Record<string, number> = {};
-    
+
     selectedResidents.forEach(id => {
       const resident = residents.find(r => r.id === id);
       if (resident) {
@@ -193,287 +158,312 @@ const BroadcastSystem: React.FC<{ residents?: Resident[], presidentName?: string
         blocks[block] = (blocks[block] || 0) + 1;
       }
     });
-    
+
     return Object.entries(blocks)
       .map(([block, count]) => `Block ${block}: ${count}`)
       .join(", ");
   };
-  
+
   // Format timestamp for display
   const formatTimestamp = (timestamp: string): string => {
     const date = new Date(timestamp);
     return date.toLocaleString();
   };
-  
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Presidential Broadcast</Text>
-        <TouchableOpacity 
-          style={styles.historyButton}
-          onPress={() => setShowHistory(true)}
-        >
-          <MaterialCommunityIcons name="history" size={24} color="#fff" />
-          <Text style={styles.historyButtonText}>History</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.presidentInfo}>
-        <View style={styles.presidentAvatar}>
-          <MaterialCommunityIcons name="account-tie" size={36} color="#fff" />
+    <LinearGradient
+      colors={[primaryCyan, primaryBlue]}
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <View style={styles.container}>
+        {/* Header with Title and History Button */}
+        <View style={styles.headerContainer}>
+          <LinearGradient
+            colors={[primaryCyan, primaryBlue]}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Presidential Broadcast</Text>
+              <TouchableOpacity
+                style={styles.historyButton}
+                onPress={() => setShowHistory(true)}
+              >
+                <MaterialCommunityIcons name="history" size={18} color="#fff" />
+                <Text style={styles.historyButtonText}>History</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* President Info Section */}
+            <View style={styles.presidentInfo}>
+              <View style={styles.presidentAvatar}>
+                <MaterialCommunityIcons name="account" size={32} color="#fff" />
+              </View>
+              <View style={styles.presidentDetails}>
+                <Text style={styles.presidentName}>{presidentName}</Text>
+                <Text style={styles.presidentTitle}>Building President</Text>
+              </View>
+            </View>
+          </LinearGradient>
         </View>
-        <View style={styles.presidentDetails}>
-          <Text style={styles.presidentName}>{presidentName}</Text>
-          <Text style={styles.presidentTitle}>President, Resident Association</Text>
-        </View>
-      </View>
-      
-      <ScrollView style={styles.formContainer}>
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Presidential Announcement</Text>
-          
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Title *</Text>
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Enter announcement title"
-              maxLength={50}
-            />
-          </View>
-          
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Message *</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={message}
-              onChangeText={setMessage}
-              placeholder="Enter your announcement here..."
-              multiline
-              numberOfLines={6}
-              textAlignVertical="top"
-            />
-          </View>
-          
-          <View style={styles.optionsContainer}>
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Mark as Urgent</Text>
-              <Switch
-                value={isUrgent}
-                onValueChange={setIsUrgent}
-                trackColor={{ false: "#ccc", true: "#FAD2D0" }}
-                thumbColor={isUrgent ? "#F44336" : "#fff"}
+
+        <ScrollView style={styles.formContainer}>
+          <View style={styles.formSection}>
+            <Text style={styles.sectionTitle}>Presidential Announcement</Text>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Title *</Text>
+              <TextInput
+                style={styles.input}
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Enter announcement title"
+                maxLength={50}
               />
             </View>
             
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Pin to Notice Board</Text>
-              <Switch
-                value={isPinned}
-                onValueChange={setIsPinned}
-                trackColor={{ false: "#ccc", true: "#E1F5FE" }}
-                thumbColor={isPinned ? "#0288D1" : "#fff"}
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Message *</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={message}
+                onChangeText={setMessage}
+                placeholder="Enter your announcement here..."
+                multiline
+                numberOfLines={6}
+                textAlignVertical="top"
               />
             </View>
+
+            <View style={styles.optionsContainer}>
+              <View style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>Mark as Urgent</Text>
+                <Switch
+                  value={isUrgent}
+                  onValueChange={setIsUrgent}
+                  trackColor={{ false: "#ccc", true: "#FAD2D0" }}
+                  thumbColor={isUrgent ? "#F44336" : "#fff"}
+                />
+              </View>
+
+              <View style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>Pin to Notice Board</Text>
+                <Switch
+                  value={isPinned}
+                  onValueChange={setIsPinned}
+                  trackColor={{ false: "#ccc", true: "#E1F5FE" }}
+                  thumbColor={isPinned ? "#0288D1" : "#fff"}
+                />
+              </View>
+            </View>
           </View>
-        </View>
-        
-        <View style={styles.formSection}>
-          <Text style={styles.sectionTitle}>Recipients</Text>
-          
-          <View style={styles.recipientSummary}>
-            <Text style={styles.recipientCount}>
-              Selected: {selectedResidents.length} of {residents.length} residents
-            </Text>
-            <Text style={styles.recipientDistribution}>
-              {getSelectionSummary()}
-            </Text>
-          </View>
-          
-          <TouchableOpacity 
-            style={styles.quickActionButton}
-            onPress={handleSelectAll}
-          >
-            <MaterialCommunityIcons name="account-group" size={24} color="#2196F3" />
-            <Text style={styles.quickActionButtonText}>
-              {selectAll ? "Deselect All Residents" : "Select All Residents"}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.recipientSelector}
-            onPress={() => setShowResidentSelector(true)}
-          >
-            <MaterialCommunityIcons name="account-multiple-check" size={24} color="#2196F3" />
-            <Text style={styles.recipientSelectorText}>Manage Individual Recipients</Text>
-            <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.button, styles.cancelButton]}
-            onPress={resetForm}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.button, 
-              styles.sendButton,
-              isUrgent ? styles.urgentButton : null,
-              (selectedResidents.length === 0 || !title || !message) ? styles.disabledButton : null
-            ]}
-            onPress={sendNotification}
-            disabled={selectedResidents.length === 0 || !title || !message}
-          >
-            <MaterialCommunityIcons name={isUrgent ? "alert" : "send"} size={18} color="#fff" style={styles.buttonIcon} />
-            <Text style={styles.sendButtonText}>
-              {isUrgent ? 'Send Urgent Announcement' : 'Send Announcement'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-      
-      {/* Resident Selector Modal */}
-      <Modal
-        visible={showResidentSelector}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowResidentSelector(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Recipients</Text>
-              <TouchableOpacity onPress={() => setShowResidentSelector(false)}>
-                <MaterialCommunityIcons name="close" size={24} color="#333" />
-              </TouchableOpacity>
+
+          {/* Resident Selector */}
+          <View style={styles.formSection}>
+            <Text style={styles.sectionTitle}>Recipients</Text>
+            
+            <View style={styles.recipientSummary}>
+              <Text style={styles.recipientCount}>
+                Selected: {selectedResidents.length} of {residents.length} residents
+              </Text>
+              <Text style={styles.recipientDistribution}>
+                {getSelectionSummary()}
+              </Text>
             </View>
             
             <TouchableOpacity 
-              style={styles.selectAllContainer}
+              style={styles.quickActionButton}
               onPress={handleSelectAll}
             >
-              <MaterialCommunityIcons 
-                name={selectAll ? "checkbox-marked" : "checkbox-blank-outline"} 
-                size={24} 
-                color="#2196F3" 
-              />
-              <Text style={styles.selectAllText}>Select All Residents</Text>
+              <MaterialCommunityIcons name="account-group" size={24} color={primaryBlue} />
+              <Text style={styles.quickActionButtonText}>
+                {selectAll ? "Deselect All Residents" : "Select All Residents"}
+              </Text>
             </TouchableOpacity>
             
-            <FlatList
-              data={residents}
-              keyExtractor={item => item.id}
-              contentContainerStyle={styles.residentsList}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={styles.residentItem}
-                  onPress={() => toggleResident(item.id)}
-                >
-                  <View style={styles.checkboxContainer}>
-                    <MaterialCommunityIcons 
-                      name={selectedResidents.includes(item.id) ? "checkbox-marked" : "checkbox-blank-outline"} 
-                      size={24} 
-                      color="#2196F3" 
-                    />
-                  </View>
-                  <View style={styles.residentInfo}>
-                    <Text style={styles.residentName}>{item.name}</Text>
-                    <Text style={styles.residentFlat}>Flat: {item.flatNumber}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-            
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={[styles.button, styles.confirmButton]}
-                onPress={() => setShowResidentSelector(false)}
-              >
-                <Text style={styles.confirmButtonText}>
-                  Confirm ({selectedResidents.length} selected)
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={styles.recipientSelector}
+              onPress={() => setShowResidentSelector(true)}
+            >
+              <MaterialCommunityIcons name="account-multiple-check" size={24} color={primaryBlue} />
+              <Text style={styles.recipientSelectorText}>Manage Individual Recipients</Text>
+              <MaterialCommunityIcons name="chevron-right" size={24} color={primaryBlue} />
+            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-      
-      {/* Notification History Modal */}
-      <Modal
-        visible={showHistory}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowHistory(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Presidential Announcements</Text>
-              <TouchableOpacity onPress={() => setShowHistory(false)}>
-                <MaterialCommunityIcons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-            
-            {notifications.length === 0 ? (
-              <View style={styles.emptyHistory}>
-                <MaterialCommunityIcons name="bell-off-outline" size={48} color="#ccc" />
-                <Text style={styles.emptyHistoryText}>No announcements sent yet</Text>
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={resetForm}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.sendButton,
+                isUrgent ? styles.urgentButton : null,
+                (selectedResidents.length === 0 || !title || !message) ? styles.disabledButton : null
+              ]}
+              onPress={sendNotification}
+              disabled={selectedResidents.length === 0 || !title || !message}
+            >
+              <MaterialCommunityIcons name={isUrgent ? "alert" : "send"} size={18} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.sendButtonText}>
+                {isUrgent ? 'Send Urgent Announcement' : 'Send Announcement'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {/* Resident Selector Modal */}
+        <Modal
+          visible={showResidentSelector}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowResidentSelector(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Recipients</Text>
+                <TouchableOpacity onPress={() => setShowResidentSelector(false)}>
+                  <MaterialCommunityIcons name="close" size={24} color="#333" />
+                </TouchableOpacity>
               </View>
-            ) : (
+
+              <TouchableOpacity
+                style={styles.selectAllContainer}
+                onPress={handleSelectAll}
+              >
+                <MaterialCommunityIcons
+                  name={selectAll ? "checkbox-marked" : "checkbox-blank-outline"}
+                  size={24}
+                  color={primaryBlue}
+                />
+                <Text style={styles.selectAllText}>Select All Residents</Text>
+              </TouchableOpacity>
+
               <FlatList
-                data={notifications}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.notificationsList}
+                data={residents}
+                style={styles.residentsList}
+                keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <View style={[
-                    styles.notificationItem,
-                    item.isUrgent ? styles.urgentNotification : null
-                  ]}>
-                    {item.isUrgent && (
-                      <View style={styles.urgentBadge}>
-                        <MaterialCommunityIcons name="alert" size={16} color="#fff" />
-                        <Text style={styles.urgentBadgeText}>URGENT</Text>
-                      </View>
-                    )}
-                    <Text style={styles.notificationTitle}>{item.title}</Text>
-                    <Text style={styles.notificationMessage}>{item.message}</Text>
-                    <View style={styles.notificationMeta}>
-                      <Text style={styles.notificationDate}>
-                        {formatTimestamp(item.timestamp)}
-                      </Text>
-                      <Text style={styles.notificationRecipients}>
-                        Sent to {item.sentTo.length} resident{item.sentTo.length !== 1 ? 's' : ''}
-                      </Text>
+                  <TouchableOpacity
+                    style={styles.residentItem}
+                    onPress={() => toggleResident(item.id)}
+                  >
+                    <View style={styles.checkboxContainer}>
+                      <MaterialCommunityIcons
+                        name={
+                          selectedResidents.includes(item.id)
+                            ? "checkbox-marked"
+                            : "checkbox-blank-outline"
+                        }
+                        size={24}
+                        color={primaryBlue}
+                      />
                     </View>
-                  </View>
+                    <View style={styles.residentInfo}>
+                      <Text style={styles.residentName}>{item.name}</Text>
+                      <Text style={styles.residentFlat}>Flat {item.flatNumber}</Text>
+                    </View>
+                  </TouchableOpacity>
                 )}
               />
-            )}
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={[styles.button, styles.confirmButton]}
+                  onPress={() => setShowResidentSelector(false)}
+                >
+                  <Text style={styles.confirmButtonText}>
+                    Confirm Selection ({selectedResidents.length})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+
+        {/* Notification History Modal */}
+        <Modal
+          visible={showHistory}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowHistory(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Announcement History</Text>
+                <TouchableOpacity onPress={() => setShowHistory(false)}>
+                  <MaterialCommunityIcons name="close" size={24} color="#333" />
+                </TouchableOpacity>
+              </View>
+
+              {notifications.length > 0 ? (
+                <FlatList
+                  data={notifications}
+                  style={styles.notificationsList}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <View style={[styles.notificationItem, item.isUrgent && styles.urgentNotification]}>
+                      {item.isUrgent && (
+                        <View style={styles.urgentBadge}>
+                          <MaterialCommunityIcons name="alert" size={12} color="#fff" />
+                          <Text style={styles.urgentBadgeText}>URGENT</Text>
+                        </View>
+                      )}
+                      <Text style={styles.notificationTitle}>{item.title}</Text>
+                      <Text style={styles.notificationMessage}>{item.message}</Text>
+                      <View style={styles.notificationMeta}>
+                        <Text style={styles.notificationDate}>
+                          {formatTimestamp(item.createdAt)}
+                        </Text>
+                        <Text style={styles.notificationRecipients}>
+                          Sent to {item.sentTo.length} resident{item.sentTo.length !== 1 ? 's' : ''}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                />
+              ) : (
+                <View style={styles.emptyHistory}>
+                  <MaterialCommunityIcons name="message-outline" size={48} color="#ccc" />
+                  <Text style={styles.emptyHistoryText}>No announcements yet</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  headerContainer: {
+    elevation: 4,
+  },
+  headerGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1a237e', // Darker blue for presidential
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    elevation: 4,
   },
   headerTitle: {
     fontSize: 20,
@@ -496,12 +486,11 @@ const styles = StyleSheet.create({
   presidentInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3949ab',
     paddingHorizontal: 24,
     paddingVertical: 16,
   },
   presidentAvatar: {
-    backgroundColor: '#283593',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -536,7 +525,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: primaryBlue,
     marginBottom: 16,
   },
   formGroup: {
@@ -601,7 +590,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    color: '#2196F3',
+    color: primaryBlue,
     marginLeft: 12,
   },
   recipientSelector: {
@@ -616,7 +605,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    color: '#2196F3',
+    color: primaryBlue,
     marginLeft: 12,
   },
   buttonContainer: {
@@ -635,7 +624,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   sendButton: {
-    backgroundColor: '#3F51B5', // More presidential blue
+    backgroundColor: primaryBlue,
     flexDirection: 'row',
     flex: 3,
     marginLeft: 12,
@@ -732,7 +721,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   confirmButton: {
-    backgroundColor: '#3F51B5',
+    backgroundColor: primaryBlue,
     width: '100%',
   },
   confirmButtonText: {
@@ -810,15 +799,5 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 });
-
-// Sample App component to demonstrate usage
-const App = () => {
-  return (
-    <BroadcastSystem 
-      residents={dummyResidents}
-      presidentName="Maria Rodriguez"
-    />
-  );
-};
 
 export default BroadcastSystem;

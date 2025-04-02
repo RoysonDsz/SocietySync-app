@@ -1,88 +1,64 @@
-import React, { useState,useEffect } from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Modal, Pressable } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
-import axios from 'axios'
+
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
 
-const PresidentDashboard: React.FC = () => {
+const WatchmanDashBord: React.FC = () => {
   const router = useRouter();
   const [profileModalVisible, setProfileModalVisible] = useState(false);
-  interface PresidentInfo {
-    name: string;
-    flatNo: string;
-    phoneNumber: string;
-  }
 
-  const [presidentInfo, setUser] = useState({});
   // Mock president data
- 
-  // Colors from the image
+  const presidentInfo = {
+    name: "Royson Doe",
+    flatNo: "A-501",
+    phoneNumber: "+91 8787895578"
+  };
+
+  // Colors from the code
   const primaryBlue = '#180DC9';
   const primaryCyan = '#06D9E0';
 
   const items = [
     {
-      title: "Complaints",
-      icon: "message-alert",
-      path: "/screen/President/ComplaintsPage",
-      gradient: [primaryCyan, primaryBlue]
-    },
-    {
+      id: "01",
       title: "Notifications",
-      icon: "bell",
-      path: "/screen/President/BroadcastSystem",
-      gradient: [primaryBlue, primaryCyan]
-    },
-    {
-      title: "Residents",
-      icon: "account-group",
-      path: "/screen/President/PResidentLogBook",
+      icon: "message-alert",
+      path: "/screen/Watchman/NotificationsPage",
       gradient: [primaryCyan, primaryBlue]
     },
     {
-      title: "Emergency Respond",
-      icon: "alert-circle",
-      path: "/screen/President/EmergencyControl",
-      gradient: [primaryBlue, primaryCyan]
-    },
-    {
-      title: "Event Management",
-      icon: "calendar-month",
-      path: "/screen/President/EventManagement",
-      gradient: [primaryCyan, primaryBlue]
-    },
-    {
-      title: "Visitors Log",
+      id: "02",
+      title: "Visitors Alert",
       icon: "book-open-page-variant",
-      path: "/screen/President/PresidentVisiterLog",
+      path: "/screen/Watchman/VisitorManagementSystem",
+      gradient: [primaryBlue, primaryCyan]
+    },
+    {
+      id: "03",
+      title: "Residents Log",
+      icon: "account-group",
+      path: "/screen/Watchman/ResidentLogBook",
+      gradient: [primaryCyan, primaryBlue]
+    },
+    {
+      id: "04",
+      title: "Emergency Alert",
+      icon: "alert-circle",
+      path: "/screen/Watchman/EmergencyAlertPage",
       gradient: [primaryBlue, primaryCyan]
     },
   ];
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-        });
-        setUser(response.data.response);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
 
-    fetchUserData();
-  }, []);
-
-  const handlePress = (path:any) => {
+  const handlePress = (path: any) => {
     router.push(path);
   };
 
   const handleLogout = () => {
     // Handle logout functionality here
-    // For example: clear storage, reset state, navigate to login
     router.replace("/"); // Navigate to login/home screen
     setProfileModalVisible(false);
   };
@@ -99,7 +75,7 @@ const PresidentDashboard: React.FC = () => {
         {/* Redesigned header with profile and welcome text on the same line */}
         <View style={styles.header}>
           <View style={styles.welcomeSection}>
-            <Text style={styles.helloText}>Hello, President</Text>
+            <Text style={styles.helloText}>Hello, WatchMan</Text>
             <Text style={styles.welcomeText}>Welcome to the App</Text>
           </View>
           <TouchableOpacity 
@@ -115,7 +91,6 @@ const PresidentDashboard: React.FC = () => {
       <View style={styles.cardsContainer}>
         <FlatList
           data={items}
-          numColumns={2}
           renderItem={({ item, index }) => (
             <TouchableOpacity 
               onPress={() => handlePress(item.path)} 
@@ -128,14 +103,34 @@ const PresidentDashboard: React.FC = () => {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons name={item.icon} size={28} color="#FFFFFF" />
+                {/* Number bubble indicator */}
+                <View style={styles.numberBubbleContainer}>
+                  <View style={styles.numberBubble}>
+                    <Text style={styles.numberText}>{item.id}</Text>
+                  </View>
                 </View>
-                <Text style={styles.itemTitle}>{item.title}</Text>
+                
+                {/* Title and content section */}
+                <View style={styles.cardContentContainer}>
+                  <Text style={styles.cardTitle}>{item.title.toUpperCase()}</Text>
+                  <Text style={styles.cardSubtitle}>INFOGRAPHICS</Text>
+                  
+                  <View style={styles.cardContent}>
+                    <View style={styles.textSection}>
+                      <Text style={styles.cardDescription}>
+                        Manage and view all {item.title.toLowerCase()} with just a tap
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.iconCircle}>
+                      <MaterialCommunityIcons name={item.icon} size={22} color="#FFFFFF" />
+                    </View>
+                  </View>
+                </View>
               </LinearGradient>
             </TouchableOpacity>
           )}
-          keyExtractor={(item) => item.title}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
@@ -169,7 +164,7 @@ const PresidentDashboard: React.FC = () => {
                 </TouchableOpacity>
                 
                 <MaterialCommunityIcons name="account-circle" size={70} color="#FFFFFF" />
-                <Text style={styles.profileTitle}>President Profile</Text>
+                <Text style={styles.profileTitle}>WatchMan Profile</Text>
               </LinearGradient>
               
               <View style={styles.profileInfoContainer}>
@@ -182,7 +177,7 @@ const PresidentDashboard: React.FC = () => {
                 <View style={styles.infoRow}>
                   <MaterialCommunityIcons name="home" size={24} color={primaryBlue} />
                   <Text style={styles.infoLabel}>Flat No:</Text>
-                  <Text style={styles.infoValue}>211</Text>
+                  <Text style={styles.infoValue}>{presidentInfo.flatNo}</Text>
                 </View>
                 
                 <View style={styles.infoRow}>
@@ -221,7 +216,7 @@ const styles = StyleSheet.create({
   },
   // Top Container styling with gradient
   topContainer: {
-    paddingTop: height * 0.03, // Reduced to move everything up
+    paddingTop: height * 0.03,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     shadowColor: '#000',
@@ -238,7 +233,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 20, // Added margin to position header lower from the top edge
+    marginTop: 20,
   },
   profileIconContainer: {
     width: 40,
@@ -247,7 +242,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   welcomeSection: {
-    flex: 1, // Allow text to take available space
+    flex: 1,
   },
   helloText: {
     fontSize: 24,
@@ -259,7 +254,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFFFFF',
   },
-  // Cards Container styling - positioned to overlap
+  // Cards Container styling
   cardsContainer: {
     flex: 1,
     marginTop: -50,
@@ -271,41 +266,91 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   dashboardItem: {
-    flex: 1,
-    margin: 8,
-    height: height * 0.18,
-    maxHeight: 160,
-    minHeight: 120,
-    borderRadius: 20,
+    marginHorizontal: 8,
+    marginVertical: 10,
+    height: 100, // Fixed height for all cards
+    borderRadius: 25,
     overflow: 'hidden',
-    elevation: 3,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    backgroundColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   itemGradient: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
   },
-  iconContainer: {
-    marginBottom: 16,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+  // Number bubble styling
+  numberBubbleContainer: {
+    position: 'absolute',
+    right: 20,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  itemTitle: {
+  numberBubble: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  numberText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  // Card content styling
+  cardContentContainer: {
+    flex: 1,
+    paddingVertical: 15,
+    paddingRight: 60, // Space for the number bubble
+  },
+  cardTitle: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+  },
+  cardSubtitle: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    opacity: 0.8,
+    marginBottom: 5,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  textSection: {
+    flex: 1,
+    marginRight: 10,
+  },
+  cardDescription: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    opacity: 0.9,
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 5,
   },
   
-  // Modal Styles
+  // Modal Styles - keeping the original modal styling
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -332,9 +377,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    position: 'relative', // Added for absolute positioning of close button
+    position: 'relative',
   },
-  // Close button styles
   closeButton: {
     position: 'absolute',
     top: 10,
@@ -401,4 +445,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PresidentDashboard;
+export default WatchmanDashBord;

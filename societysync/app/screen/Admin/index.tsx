@@ -9,6 +9,8 @@ import ManageResident from './ManageResident';
 import PaymentReports from './PaymentReports';
 import ResidentList from "./ResidentList";
 import ResidentReport from "./ResidentReport";
+import WatchmanSignup from "./WatchmanSignup";
+
 import SendNotifications from "./SendNotification";
 import VisitorLogs from './VisitorLogs';
 
@@ -31,6 +33,9 @@ export type RootStackParamList = {
     };
     ExpenseAnalytics: { buildingId: string };
     ResidentReport: { buildingId: string };
+    WatchmanSignUp: { buildingId: string };
+
+   
   };
   
   const Stack = createStackNavigator<RootStackParamList>();
@@ -49,7 +54,9 @@ export type RootStackParamList = {
         <Stack.Screen name="SendNotifications" component={SendNotifications} />
         <Stack.Screen name="ExpenseAnalytics" component={ExpenseAnalytics} />
         <Stack.Screen name="ResidentReport" component={ResidentReport} />
+        <Stack.Screen name="WatchmanSignUp" component={WatchmanSignup} />
         <Stack.Screen name="BookEventForm" component={BookEventForm} />
+
       </Stack.Navigator>
       );
   }

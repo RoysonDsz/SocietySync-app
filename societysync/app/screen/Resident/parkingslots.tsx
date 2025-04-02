@@ -1,56 +1,171 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, TouchableOpacity, FlatList, StyleSheet, Modal, TextInput, Button, Alert 
 } from "react-native";
+import axios from 'axios';
 
 const totalSlots = 20;
+const API_BASE_URL = 'https://mrnzp03x-5050.inc1.devtunnels.ms/api/parking';
+
+interface ParkingSlot {
+  _id?: string;
+  vehicleNumber: string;
+  residentName: string;
+  residentNumber: string;
+  slotNumber: string;
+  status: 'Occupied' | 'Available';
+  createdAt?: Date;
+}
 
 const ParkingSlot: React.FC = () => {
-  const [bookedSlots, setBookedSlots] = useState<{ slot: number; residentId: string }[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<ParkingSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [formData, setFormData] = useState({
-    residentId: "Resident101",
-    name: "",
-    houseNumber: "",
+  const [client,setClient] = useState([]);
+  const [formData, setFormData] = useState<ParkingSlot>({
+    residentName: "",
+    residentNumber: "",
     vehicleNumber: "",
-    date: "",
+    slotNumber: "",
+    status: 'Occupied'
   });
-
+  
   useEffect(() => {
-    // Simulated database fetch
-    setBookedSlots([{ slot: 3, residentId: "Resident102" }, { slot: 7, residentId: "Resident101" }]);
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        });
+        formData.residentName=response.data.response.name;
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+  
+    fetchUserData();
+  }, []);
+  useEffect(() => {
+    fetchBookedSlots();
   }, []);
 
-  const residentBookings = bookedSlots.filter(slot => slot.residentId === formData.residentId).length;
+  const fetchBookedSlots = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/get-parkings`);
+      const occupiedSlots = response.data.filter((slot: ParkingSlot) => slot.status === 'Occupied');
+      setBookedSlots(occupiedSlots);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch booked slots');
+      console.error(error);
+    }
+  };
+
+  const getResidentBookingsCount = () => {
+    return bookedSlots.filter(slot => 
+      slot.residentNumber === formData.residentNumber
+    ).length;
+  };
 
   const handleBooking = (slotNumber: number) => {
-    if (residentBookings >= 2) {
+    const residentBookings = getResidentBookingsCount();
+    
+    if (formData.residentNumber && residentBookings >= 2) {
       Alert.alert("Limit Reached", "You have already booked 2 slots. Request admin approval for more.");
       return;
     }
 
     setSelectedSlot(slotNumber);
+    setFormData(prev => ({
+      ...prev,
+      slotNumber: slotNumber.toString()
+    }));
     setModalVisible(true);
   };
 
-  const confirmBooking = () => {
-    if (!formData.name || !formData.houseNumber || !formData.vehicleNumber || !formData.date) {
+  const confirmBooking = async () => {
+    if (!formData.residentName || !formData.residentNumber || !formData.vehicleNumber || !formData.slotNumber) {
       Alert.alert("Error", "Please fill all fields!");
       return;
     }
 
-    if (selectedSlot !== null) {
-      setBookedSlots([...bookedSlots, { slot: selectedSlot, residentId: formData.residentId }]);
-      Alert.alert("Success", `Slot ${selectedSlot} booked successfully!`);
-      setModalVisible(false);
-      setFormData({ ...formData, name: "", houseNumber: "", vehicleNumber: "", date: "" });
+    const payload = {
+      vehicleNumber: formData.vehicleNumber,
+      residentName: formData.residentName,
+      residentNumber: formData.residentNumber,
+      slotNumber: formData.slotNumber,
+      status: 'Occupied',
+    };
+
+    console.log("Sending payload to API:", payload);
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/book-parkings`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log("API Response:", response.data);
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert("Success", `Slot ${formData.slotNumber} booked successfully!`);
+        setModalVisible(false);
+        setFormData({
+          residentName: "",
+          residentNumber: "",
+          vehicleNumber: "",
+          slotNumber: "",
+          status: 'Occupied',
+        });
+        setSelectedSlot(null);
+        await fetchBookedSlots();
+      } else {
+        Alert.alert("Error", "Unexpected response from server");
+      }
+    } catch (error : any) {
+      const errorMessage = error.response?.data?.message || error.message;
+      console.error("Booking Error:", error.response?.data || error);
+      Alert.alert("Error", `Failed to book slot: ${errorMessage}`);
     }
   };
 
-  const handleCancelBooking = (slotNumber: number) => {
-    setBookedSlots(bookedSlots.filter(slot => slot.slot !== slotNumber));
-    Alert.alert("Booking Canceled", `Slot ${slotNumber} is now available.`);
+  const handleCancelBooking = async (slotId?: string) => {
+    if (!slotId) return;
+
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/delete-parkings/${slotId}`);
+      if (response.status === 200) {
+        Alert.alert("Booking Canceled", `Slot is now available.`);
+        await fetchBookedSlots();
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to cancel booking');
+      console.error('Cancel error:', error);
+    }
+  };
+
+  const renderSlotItem = ({ item }: { item: number }) => {
+    const isBooked = bookedSlots.some(slot => parseInt(slot.slotNumber) === item);
+    const bookedSlot = bookedSlots.find(slot => parseInt(slot.slotNumber) === item);
+
+    return (
+      <View style={styles.slotContainer}>
+        <TouchableOpacity
+          style={[styles.slot, isBooked ? styles.bookedSlot : styles.availableSlot]}
+          onPress={() => handleBooking(item)}
+          disabled={isBooked}
+        >
+          <Text style={styles.slotText}>{isBooked ? "Booked" : item.toString()}</Text>
+        </TouchableOpacity>
+        {isBooked && bookedSlot?._id && (
+          <TouchableOpacity 
+            style={styles.cancelButton} 
+            onPress={() => handleCancelBooking(bookedSlot._id)}
+          >
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
   };
 
   return (
@@ -64,38 +179,46 @@ const ParkingSlot: React.FC = () => {
           data={Array.from({ length: totalSlots }, (_, i) => i + 1)}
           numColumns={4}
           keyExtractor={(item) => item.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.slotContainer}>
-              <TouchableOpacity
-                style={[styles.slot, bookedSlots.some((slot) => slot.slot === item) ? styles.bookedSlot : styles.availableSlot]}
-                onPress={() => handleBooking(item)}
-                disabled={bookedSlots.some((slot) => slot.slot === item)}
-              >
-                <Text style={styles.slotText}>{bookedSlots.some((slot) => slot.slot === item) ? "Booked" : item}</Text>
-              </TouchableOpacity>
-              {bookedSlots.some((slot) => slot.slot === item) && (
-                <TouchableOpacity style={styles.cancelButton} onPress={() => handleCancelBooking(item)}>
-                  <Text style={styles.cancelText}>Cancel</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+          renderItem={renderSlotItem}
         />
       </View>
 
-      {/* Booking Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Enter Booking Details</Text>
-            <TextInput style={styles.input} placeholder="Name" value={formData.name} onChangeText={(text) => setFormData({ ...formData, name: text })} />
-            <TextInput style={styles.input} placeholder="House Number" value={formData.houseNumber} onChangeText={(text) => setFormData({ ...formData, houseNumber: text })} />
-            <TextInput style={styles.input} placeholder="Vehicle Number" value={formData.vehicleNumber} onChangeText={(text) => setFormData({ ...formData, vehicleNumber: text })} />
-            <TextInput style={styles.input} placeholder="Date (YYYY-MM-DD)" value={formData.date} onChangeText={(text) => setFormData({ ...formData, date: text })} />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Resident Name" 
+              value={formData.residentName} 
+              onChangeText={(text) => setFormData(prev => ({ ...prev, residentName: text }))} 
+            />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Resident Number" 
+              value={formData.residentNumber} 
+              onChangeText={(text) => setFormData(prev => ({ ...prev, residentNumber: text }))} 
+              keyboardType="phone-pad"
+            />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Vehicle Number" 
+              value={formData.vehicleNumber} 
+              onChangeText={(text) => setFormData(prev => ({ ...prev, vehicleNumber: text }))} 
+            />
+            <TextInput 
+              style={styles.input} 
+              placeholder="Slot Number" 
+              value={formData.slotNumber} 
+              editable={false}
+            />
 
             <View style={styles.modalButtons}>
               <Button title="Confirm" color="#769eb5" onPress={confirmBooking} />
-              <Button title="Cancel" color="#C48A7E" onPress={() => setModalVisible(false)} />
+              <Button title="Cancel" color="#C48A7E" onPress={() => {
+                setModalVisible(false);
+                setSelectedSlot(null);
+              }} />
             </View>
           </View>
         </View>
@@ -106,7 +229,7 @@ const ParkingSlot: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#EFF3F6", padding: 20 },
-  headerBox: { padding: 15, borderRadius: 10, alignItems: "center", marginTop:20 ,marginBottom:70},
+  headerBox: { padding: 15, borderRadius: 10, alignItems: "center", marginTop: 20, marginBottom: 70 },
   pageTitle: { fontSize: 30, color: "black", fontWeight: "bold" },
   slotGrid: { alignItems: "center" },
   slotContainer: { margin: 5 },
@@ -123,4 +246,4 @@ const styles = StyleSheet.create({
   modalButtons: { flexDirection: "row", justifyContent: "space-between", width: "100%" },
 });
 
-export default ParkingSlot; 
+export default ParkingSlot;
