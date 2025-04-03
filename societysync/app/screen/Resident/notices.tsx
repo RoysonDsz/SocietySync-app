@@ -9,7 +9,7 @@ const NoticesScreen: React.FC = () => {
 
   const getNotices = async () => {
     try {
-      const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/notification/get`);
+      const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/notification/get`);
       console.log(response.data.notifications || []);
       if (!response.data || !response.data.notifications || response.data.notifications.length === 0) {
         setMessage('No updates.');

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   ScrollView,
@@ -13,23 +14,18 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 import { useRouter } from "expo-router";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
-
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
-
 const ContainerGrid: React.FC = () => {
   const router = useRouter();
   const [user, setUser] = useState({ name: "", phoneNumber: "" });
   const [profileModalVisible, setProfileModalVisible] = useState(false);
-
   const primaryCyan = "#06D9E0";
   const primaryBlue = "#180DC9";
-
   // Mock president data - for flat number which isn't in the API response
   const residentInfo = {
     flatNo: "A-501",
   };
-
   const items = [
     { title: "Maintenance Bills", icon: "wrench", path: "/screen/Resident/maintenance" },
     { title: "Complaint Status", icon: "email-alert", path: "/screen/Resident/complaintStatus" },
@@ -38,11 +34,10 @@ const ContainerGrid: React.FC = () => {
     { title: "Parking Slot Info", icon: "car-parking-lights", path: "/screen/Resident/parkingslots" },
     { title: "Emergency Contacts", icon: "alert-circle", path: "/screen/Resident/emergencycontacts" },
   ];
-
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
+        const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
         setUser(response.data.response);
@@ -50,20 +45,16 @@ const ContainerGrid: React.FC = () => {
         console.error("Error fetching user data:", error);
       }
     };
-
     fetchUserData();
   }, []);
-
   const handlePress = (path: string) => {
     router.push(path as any);
   };
-
   const handleLogout = () => {
     // Handle logout functionality here
     router.replace("/"); // Navigate to login/home screen
     setProfileModalVisible(false);
   };
-
   return (
     <View style={styles.mainContainer}>
       <View style={styles.headerContainer}>
@@ -75,7 +66,6 @@ const ContainerGrid: React.FC = () => {
           <MaterialCommunityIcons name="account-circle" size={32} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-
       <ScrollView style={styles.contentContainer}>
         {/* First Row */}
         <View style={[styles.row, { marginTop: 30 }]}>
@@ -85,7 +75,6 @@ const ContainerGrid: React.FC = () => {
               <Text style={styles.title}>{items[0].title}</Text>
             </LinearGradient>
           </Pressable>
-
           <View style={styles.smallCardColumn}>
             <Pressable style={styles.smallCard} onPress={() => handlePress(items[1].path)}>
               <LinearGradient colors={[primaryCyan, primaryBlue]} style={styles.gradientCard}>
@@ -93,7 +82,6 @@ const ContainerGrid: React.FC = () => {
                 <Text style={styles.title}>{items[1].title}</Text>
               </LinearGradient>
             </Pressable>
-
             <Pressable style={styles.smallCard} onPress={() => handlePress(items[2].path)}>
               <LinearGradient colors={[primaryBlue, primaryCyan]} style={styles.gradientCard}>
                 <MaterialCommunityIcons name={items[2].icon} size={50} color="#fff" style={styles.icon} />
@@ -102,7 +90,6 @@ const ContainerGrid: React.FC = () => {
             </Pressable>
           </View>
         </View>
-
         {/* Second Row */}
         <View style={styles.row}>
           <View style={styles.smallCardColumn}>
@@ -112,7 +99,6 @@ const ContainerGrid: React.FC = () => {
                 <Text style={styles.title}>{items[3].title}</Text>
               </LinearGradient>
             </Pressable>
-
             <Pressable style={styles.smallCard} onPress={() => handlePress(items[4].path)}>
               <LinearGradient colors={[primaryBlue, primaryCyan]} style={styles.gradientCard}>
                 <MaterialCommunityIcons name={items[4].icon} size={50} color="#fff" style={styles.icon} />
@@ -120,7 +106,6 @@ const ContainerGrid: React.FC = () => {
               </LinearGradient>
             </Pressable>
           </View>
-
           <Pressable style={styles.bigCard} onPress={() => handlePress(items[5].path)}>
             <LinearGradient colors={[primaryCyan, primaryBlue]} style={styles.gradientCard}>
               <MaterialCommunityIcons name={items[5].icon} size={80} color="#fff" style={styles.icon} />
@@ -129,7 +114,6 @@ const ContainerGrid: React.FC = () => {
           </Pressable>
         </View>
       </ScrollView>
-
       {/* Profile Info Modal */}
       <Modal
         animationType="fade"
@@ -202,7 +186,6 @@ const ContainerGrid: React.FC = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
@@ -371,5 +354,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
 export default ContainerGrid;

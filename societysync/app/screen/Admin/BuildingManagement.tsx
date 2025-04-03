@@ -19,7 +19,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { Picker } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import AddBuilding from './AddBuilding';
 
 // Define the building type based on backend response
@@ -51,7 +51,7 @@ const BuildingManagement = ({ navigation }: any) => {
 
   const getAllBuildings = async () => {
     try {
-      const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/`);
+      const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/building/`);
       setBuildings(response.data); // Update state with response data
       console.log(response.data);
     } catch (error) {
@@ -73,7 +73,7 @@ const BuildingManagement = ({ navigation }: any) => {
     if (!selectedBuilding) return;
     setLoading(true);
     try {
-      const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/assign/${id}/residents?buildingId=${selectedBuilding._id}`);
+      const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/assign/${id}/residents?buildingId=${selectedBuilding._id}`);
       setResidents(response.data);
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch residents.');
@@ -103,7 +103,7 @@ const BuildingManagement = ({ navigation }: any) => {
     }
     
     try {
-      await axios.patch(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/assign-president`, { 
+      await axios.patch(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/assign-president`, { 
         id: selectedResident 
       });
       
@@ -126,7 +126,7 @@ const BuildingManagement = ({ navigation }: any) => {
 
   const handleDelete = async(buildingId: string) => {
     try {
-      await axios.delete(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/delete/${buildingId}`);
+      await axios.delete(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/building/delete/${buildingId}`);
       getAllBuildings();
     } catch (error) {
       console.log(error);
@@ -137,7 +137,7 @@ const BuildingManagement = ({ navigation }: any) => {
     if (!selectedBuilding) return;
     
     try {
-      await axios.patch(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/update/${selectedBuilding._id}`, {
+      await axios.patch(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/building/update/${selectedBuilding._id}`, {
         numberOfFlats: editedFlats
       });
       

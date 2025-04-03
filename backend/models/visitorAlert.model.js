@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const VisitorSchema = new mongoose.Schema({
-  buildingNumber: {
+  FlatNumber: {
     type: String,
     required: true,
   },

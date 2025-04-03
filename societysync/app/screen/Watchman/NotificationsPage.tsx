@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, SafeAreaView, Platform, StatusBar } from 'react-native';
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width, height } = Dimensions.get('window');
+// Dynamic dimensions with responsive handling
+const windowDimensions = Dimensions.get('window');
 
 // Add these constants at the top of your file
 const primaryBlue = '#180DC9';
@@ -21,35 +23,54 @@ interface Notification {
 
 const NotificationsPage: React.FC = () => {
   const router = useRouter();
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      title: 'Visitor Entry',
-      message: 'New visitor John Smith has entered the premises.',
-      timestamp: '2 mins ago',
-      type: 'info',
-      read: false
-    },
-    {
-      id: '2',
-      title: 'Emergency Alert',
-      message: 'Suspicious activity detected in Block C.',
-      timestamp: '15 mins ago',
-      type: 'alert',
-      read: false
-    },
-    {
-      id: '3',
-      title: 'Shift Change',
-      message: 'Your night shift replacement has been assigned.',
-      timestamp: '1 hour ago',
-      type: 'info',
-      read: true
-    }
-  ]);
+  const insets = useSafeAreaInsets();
+  const [dimensions, setDimensions] = useState({
+    width: windowDimensions.width,
+    height: windowDimensions.height
+  });
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Update dimensions when screen size changes
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setDimensions({
+        width: window.width,
+        height: window.height
+      });
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  // Fetch notifications from the server
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('https://vt92g6tf-5050.inc1.devtunnels.ms/api/alert/visitors'); // Replace with your actual API endpoint
+        const data = await response.json();
+
+        // Format the response data to match the notification format
+        const formattedNotifications = data.map((visitor: any) => ({
+          id: visitor._id, // Assuming the visitor has an _id field
+          title: `Flat number: ${visitor.FlatNumber}`,
+          message: `Visitor: ${visitor.visitorName}, Arriving at: ${visitor.visitTime}`,
+          timestamp: `${new Date(visitor.createdAt).toLocaleTimeString()}`, // Using createdAt as timestamp
+          type: 'info', // You can modify this based on certain conditions
+          read: false
+        }));
+
+        setNotifications(formattedNotifications);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
 
   const getNotificationColor = (type: Notification['type']) => {
-    switch(type) {
+    switch (type) {
       case 'alert': return '#ff6b6b';
       case 'info': return '#3498db';
       case 'success': return '#2ecc71';
@@ -57,17 +78,8 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
-  const getGradientColors = (type: Notification['type']) => {
-    switch(type) {
-      case 'alert': return ['#ff6b6b', '#ff8e8e'];
-      case 'info': return ['#2980b9', '#3498db'];  // Blue gradient
-      case 'success': return ['#27ae60', '#2ecc71'];
-      default: return ['#7f8c8d', '#95a5a6'];
-    }
-  };
-
   const getNotificationIcon = (type: Notification['type']) => {
-    switch(type) {
+    switch (type) {
       case 'alert': return 'alert-circle';
       case 'info': return 'information';
       case 'success': return 'check-circle';
@@ -76,19 +88,17 @@ const NotificationsPage: React.FC = () => {
   };
 
   const markNotificationAsRead = (id: string) => {
-    setNotifications(notifications.map(notification => 
-      notification.id === id 
-        ? { ...notification, read: true } 
+    setNotifications(notifications.map(notification =>
+      notification.id === id
+        ? { ...notification, read: true }
         : notification
     ));
   };
 
   const renderNotification = ({ item }: { item: Notification }) => (
     <TouchableOpacity 
-      style={[
-        styles.notificationContainer, 
-        { backgroundColor: item.read ? '#f4f6f9' : '#ffffff' }
-      ]}
+      style={[styles.notificationContainer, 
+        { backgroundColor: item.read ? '#f4f6f9' : '#ffffff' }]}
       onPress={() => markNotificationAsRead(item.id)}
     >
       <LinearGradient
@@ -100,74 +110,110 @@ const NotificationsPage: React.FC = () => {
       <View style={styles.notificationIconContainer}>
         <MaterialCommunityIcons 
           name={getNotificationIcon(item.type)} 
-          size={24} 
+          size={dimensions.width * 0.06 > 24 ? 24 : dimensions.width * 0.06} 
           color={getNotificationColor(item.type)} 
         />
       </View>
       <View style={styles.notificationTextContainer}>
         <Text 
-          style={[
-            styles.notificationTitle, 
-            { fontWeight: item.read ? 'normal' : 'bold' }
+          style={[styles.notificationTitle, 
+            { 
+              fontWeight: item.read ? 'normal' : 'bold',
+              fontSize: dimensions.width * 0.04 > 16 ? 16 : dimensions.width * 0.04
+            }
           ]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
         >
           {item.title}
         </Text>
         <Text 
-          style={[
-            styles.notificationMessage, 
-            { color: item.read ? '#7f8c8d' : '#2c3e50' }
+          style={[styles.notificationMessage, 
+            { 
+              color: item.read ? '#7f8c8d' : '#2c3e50',
+              fontSize: dimensions.width * 0.035 > 14 ? 14 : dimensions.width * 0.035
+            }
           ]}
           numberOfLines={2}
+          ellipsizeMode="tail"
         >
           {item.message}
         </Text>
-        <Text style={styles.notificationTimestamp}>
+        <Text 
+          style={[styles.notificationTimestamp,
+            { fontSize: dimensions.width * 0.03 > 12 ? 12 : dimensions.width * 0.03 }
+          ]}
+        >
           {item.timestamp}
         </Text>
       </View>
     </TouchableOpacity>
   );
 
+  // Calculate dynamic padding based on safe area
+  const headerPadding = {
+    paddingTop: Platform.OS === 'ios' ? insets.top : StatusBar.currentHeight || dimensions.height * 0.05,
+    paddingBottom: dimensions.width * 0.05
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <LinearGradient
         colors={[primaryCyan, primaryBlue]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.headerBackground}
+        style={[styles.headerBackground, headerPadding]}
       >
         <View style={styles.headerContainer}>
           <TouchableOpacity 
             onPress={() => router.back()} 
             style={styles.backButton}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
             <MaterialCommunityIcons 
               name="arrow-left" 
-              size={24} 
+              size={dimensions.width * 0.06 > 24 ? 24 : dimensions.width * 0.06} 
               color="#ffffff" 
             />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: '#ffffff' }]}>Notifications</Text>
+          <Text 
+            style={[styles.headerTitle, 
+              { 
+                color: '#ffffff',
+                fontSize: dimensions.width * 0.05 > 20 ? 20 : dimensions.width * 0.05
+              }
+            ]}
+            numberOfLines={1}
+          >
+            Notifications
+          </Text>
+          <View style={styles.backButton} />
         </View>
       </LinearGradient>
+      
       <FlatList
         data={notifications}
         renderItem={renderNotification}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, {
+          paddingHorizontal: dimensions.width * 0.05,
+          minHeight: dimensions.height - (headerPadding.paddingTop + headerPadding.paddingBottom + 100)
+        }]}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
+          <View style={[styles.emptyContainer, { marginTop: dimensions.height * 0.15 }]}>
             <MaterialCommunityIcons 
               name="bell-off" 
-              size={64} 
+              size={dimensions.width * 0.15 > 64 ? 64 : dimensions.width * 0.15} 
               color="#bdc3c7" 
             />
-            <Text style={styles.emptyText}>No notifications</Text>
+            <Text style={[styles.emptyText, { fontSize: dimensions.width * 0.045 > 18 ? 18 : dimensions.width * 0.045 }]}>
+              No notifications
+            </Text>
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -177,26 +223,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4f6f9',
   },
   headerBackground: {
-    paddingTop: height * 0.05,
-    paddingBottom: 20,
+    width: '100%',
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: '5%',
   },
   backButton: {
-    marginRight: 15,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: width * 0.05,
     fontWeight: '700',
-    textAlign:'center',
+    textAlign: 'center',
+    flex: 1,
   },
   listContent: {
-    paddingHorizontal: 20,
     paddingTop: 15,
+    paddingBottom: 20,
   },
   notificationContainer: {
     flexDirection: 'row',
@@ -204,7 +252,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 10,
     marginBottom: 15,
-    padding: 15,
+    padding: '4%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -221,34 +269,31 @@ const styles = StyleSheet.create({
     width: 5,
   },
   notificationIconContainer: {
-    marginRight: 15,
-    marginLeft: 5,
+    marginRight: '4%',
+    marginLeft: '1%',
+    width: '10%',
+    alignItems: 'center',
   },
   notificationTextContainer: {
     flex: 1,
+    width: '85%',
   },
   notificationTitle: {
-    fontSize: 16,
     color: '#2c3e50',
     marginBottom: 5,
   },
   notificationMessage: {
-    fontSize: 14,
     color: '#2c3e50',
     marginBottom: 5,
   },
   notificationTimestamp: {
-    fontSize: 12,
     color: '#7f8c8d',
   },
   emptyContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: height * 0.2,
   },
   emptyText: {
-    fontSize: 18,
     color: '#bdc3c7',
     marginTop: 15,
   },

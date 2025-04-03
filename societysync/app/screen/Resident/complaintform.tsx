@@ -18,7 +18,7 @@ const ComplaintStatus: React.FC = () => {
 
   const fetchComplaintStatus = async () => {
     try {
-      const response = await axios.get("https://mrnzp03x-5050.inc1.devtunnels.ms/api/complaint/get-complaint"); 
+      const response = await axios.get("https://vt92g6tf-5050.inc1.devtunnels.ms/api/complaint/get-complaint"); 
       console.log(response.data);
       if (response.data) {
         setComplaintStatus(response.data.status);  // Set complaint status
@@ -33,7 +33,7 @@ const ComplaintStatus: React.FC = () => {
 
   const postComplaint = async () => {
     try {
-      const response = await axios.post("https://mrnzp03x-5050.inc1.devtunnels.ms/api/complaint/create-complaint", 
+      const response = await axios.post("https://vt92g6tf-5050.inc1.devtunnels.ms/api/complaint/create-complaint", 
         { complaint: complaintText }, 
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );

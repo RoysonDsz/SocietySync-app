@@ -41,7 +41,7 @@ const SignUpScreen: React.FC = () => {
     }
 
     try {
-      const response = await axios.post('https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/signup', formData);
+      const response = await axios.post('https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/signup', formData);
 
       if (response.status == 200) {
         alert('Sign up successful!');
@@ -62,7 +62,7 @@ const BuildingDropdown = () => { // Add this prop
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/')
+    axios.get('https://vt92g6tf-5050.inc1.devtunnels.ms/api/building/')
       .then(response => {
         setBuildings(response.data);
         setLoading(false);

@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Modal, Pressable } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
@@ -60,11 +60,23 @@ const PresidentDashboard: React.FC = () => {
       path: "/screen/President/PresidentVisiterLog",
       gradient: [primaryBlue, primaryCyan]
     },
+    {
+      title: "Billing",
+      icon: "book-open-page-variant",
+      path: "/screen/President/MaintainencePage",
+      gradient: [primaryBlue, primaryCyan]
+    },
+    {
+      title: "History",
+      icon: "book-open-page-variant",
+      path: "/screen/President/PaymentHistoryPage",
+      gradient: [primaryBlue, primaryCyan]
+    }
   ];
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
+        const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
         setUser(response.data.response);
@@ -106,7 +118,7 @@ const PresidentDashboard: React.FC = () => {
             style={styles.profileIconContainer}
             onPress={() => setProfileModalVisible(true)}
           >
-            <MaterialCommunityIcons name="account-circle" size={32} color="#FFFFFF" />
+            <MaterialCommunityIcons name="account-circle" size={40} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -115,7 +127,7 @@ const PresidentDashboard: React.FC = () => {
       <View style={styles.cardsContainer}>
         <FlatList
           data={items}
-          numColumns={2}
+          numColumns={1} // Changed from 2 to 1 to make it single column
           renderItem={({ item, index }) => (
             <TouchableOpacity 
               onPress={() => handlePress(item.path)} 
@@ -128,10 +140,12 @@ const PresidentDashboard: React.FC = () => {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons name={item.icon} size={28} color="#FFFFFF" />
+                <View style={styles.itemContent}>
+                  <View style={styles.iconContainer}>
+                    <MaterialCommunityIcons name={item.icon} size={28} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.itemTitle}>{item.title}</Text>
                 </View>
-                <Text style={styles.itemTitle}>{item.title}</Text>
               </LinearGradient>
             </TouchableOpacity>
           )}
@@ -250,13 +264,13 @@ const styles = StyleSheet.create({
     flex: 1, // Allow text to take available space
   },
   helloText: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 4,
   },
   welcomeText: {
-    fontSize: 18,
+    fontSize: 20,
     color: '#FFFFFF',
   },
   // Cards Container styling - positioned to overlap
@@ -271,11 +285,9 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   dashboardItem: {
-    flex: 1,
+    width: '100%', // Take full width for single column
     margin: 8,
-    height: height * 0.18,
-    maxHeight: 160,
-    minHeight: 120,
+    height: height * 0.12, // Reduced height for better fit in single column
     borderRadius: 20,
     overflow: 'hidden',
     elevation: 3,
@@ -288,20 +300,24 @@ const styles = StyleSheet.create({
   itemGradient: {
     flex: 1,
     padding: 20,
-    justifyContent: 'space-between',
+    justifyContent: 'center', // Center content vertically
+  },
+  itemContent: {
+    flexDirection: 'row', // Changed to row for horizontal layout
+    alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: 16,
     width: 50,
     height: 50,
     borderRadius: 25,
     backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 20, // Add space between icon and text
   },
   itemTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
   

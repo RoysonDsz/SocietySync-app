@@ -21,35 +21,59 @@ const windowHeight = Dimensions.get('window').height;
 interface Visitor {
   _id: string;
   visitorName: string;
+  flatNumber:string;
+  visitorPhoneNumber :string;
+  purpose: string;
   buildingNumber: string;
   visitTime: string;
   createdAt: string;
   updatedAt: string;
   __v: number;
+  
 }
 
-const PresidentVisitorLog: React.FC = () => {
+const PresidentVisitorLog: React.FC = ({route}:any) => {
+  const day = new Date();
+  const { buildingNumber } = route.params;
+  const today = day.toISOString().split('T')[0]; 
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'checked-in' | 'checked-out'>('all');
   const [isDateFilterActive, setIsDateFilterActive] = useState(false);
-  const [startDate, setStartDate] = useState(""); // Format: YYYY-MM-DD
-  const [endDate, setEndDate] = useState(""); // Format: YYYY-MM-DD
+  const [startDate, setStartDate] = useState(today); // Format: YYYY-MM-DD
+  const [endDate, setEndDate] = useState(today); // Format: YYYY-MM-DD
   
   // Function to view visitor details
   const handleViewDetails = (visitor: Visitor) => {
     setSelectedVisitor(visitor);
   };
+/* only those visitors must be presented to the admin that are visited on the present day*/
+const getVisitorLog = async () => {
+  try {
+    const response = await axios.get('https://vt92g6tf-5050.inc1.devtunnels.ms/api/visitor/get-visitor');
+    
+    // Handle null/undefined response
+    const visitors: Visitor[] = response?.data?.response || [];
 
-  const getVisitorLog = async() => {
-    try {
-      const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/visitor/get-visitor');
-      setVisitors(response.data.response);
-    } catch (error) {
-      console.log(error);
-    }
+    // Default to empty array if no visitors
+    const buildingNumbers = Array.from(new Set(visitors?.map(visitor => visitor.buildingNumber) || []));
+
+    const segregatedVisitors: { [key: string]: Visitor[] } = {};
+
+    buildingNumbers.forEach(building => {
+      segregatedVisitors[building] = visitors?.filter(v => v.buildingNumber === building) || [];
+    });
+
+    // Handle case where buildingNumber has no visitors
+    setVisitors(segregatedVisitors[buildingNumber] || []);
+    
+  } catch (error) {
+    console.log(error);
+    // Ensure state is reset on error
+    setVisitors([]);
   }
+};
 
   useEffect(() => {
     getVisitorLog();
@@ -94,7 +118,7 @@ const PresidentVisitorLog: React.FC = () => {
   const TableHeader: React.FC = () => (
     <View style={styles.tableHeader}>
       <Text style={[styles.headerCell, { flex: 2.5 }]}>Visitor</Text>
-      <Text style={[styles.headerCell, { flex: 1 }]}>Building</Text>
+
       <Text style={[styles.headerCell, { flex: 1.5 }]}>Visit Time</Text>
       <Text style={[styles.headerCell, { flex: 1 }]}>Status</Text>
     </View>
@@ -109,7 +133,7 @@ const PresidentVisitorLog: React.FC = () => {
       <View style={[styles.tableCell, { flex: 2.5 }]}>
         <Text style={styles.visitorName} numberOfLines={1}>{visitor.visitorName}</Text>
       </View>
-      <Text style={[styles.tableCell, { flex: 1 }]} numberOfLines={1}>{visitor.buildingNumber}</Text>
+     
       <Text style={[styles.tableCell, { flex: 1.5 }]} numberOfLines={1}>
         {visitor.visitTime}
       </Text>

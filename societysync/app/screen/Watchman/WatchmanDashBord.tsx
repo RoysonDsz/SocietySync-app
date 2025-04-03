@@ -24,28 +24,24 @@ const WatchmanDashBord: React.FC = () => {
 
   const items = [
     {
-      id: "01",
       title: "Notifications",
       icon: "message-alert",
       path: "/screen/Watchman/NotificationsPage",
       gradient: [primaryCyan, primaryBlue]
     },
     {
-      id: "02",
       title: "Visitors Alert",
       icon: "book-open-page-variant",
       path: "/screen/Watchman/VisitorManagementSystem",
       gradient: [primaryBlue, primaryCyan]
     },
     {
-      id: "03",
       title: "Residents Log",
       icon: "account-group",
       path: "/screen/Watchman/ResidentLogBook",
       gradient: [primaryCyan, primaryBlue]
     },
     {
-      id: "04",
       title: "Emergency Alert",
       icon: "alert-circle",
       path: "/screen/Watchman/EmergencyAlertPage",
@@ -103,34 +99,22 @@ const WatchmanDashBord: React.FC = () => {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                {/* Number bubble indicator */}
-                <View style={styles.numberBubbleContainer}>
-                  <View style={styles.numberBubble}>
-                    <Text style={styles.numberText}>{item.id}</Text>
+                {/* Icon circle placed on the right */}
+                <View style={styles.iconBubbleContainer}>
+                  <View style={styles.iconBubble}>
+                    <MaterialCommunityIcons name={item.icon} size={28} color="#333" />
                   </View>
                 </View>
                 
-                {/* Title and content section */}
+                {/* Title section */}
                 <View style={styles.cardContentContainer}>
                   <Text style={styles.cardTitle}>{item.title.toUpperCase()}</Text>
-                  <Text style={styles.cardSubtitle}>INFOGRAPHICS</Text>
                   
-                  <View style={styles.cardContent}>
-                    <View style={styles.textSection}>
-                      <Text style={styles.cardDescription}>
-                        Manage and view all {item.title.toLowerCase()} with just a tap
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.iconCircle}>
-                      <MaterialCommunityIcons name={item.icon} size={22} color="#FFFFFF" />
-                    </View>
-                  </View>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
           )}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.title}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
@@ -261,40 +245,40 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    paddingTop: 10,
+    paddingHorizontal: 20, // Increased horizontal padding
+    paddingBottom: 25,     // Increased bottom padding
+    paddingTop: 15,        // Increased top padding
   },
   dashboardItem: {
     marginHorizontal: 8,
-    marginVertical: 10,
-    height: 100, // Fixed height for all cards
+    marginVertical: 15,    // Increased from 10 to 15 for more spacing between cards
+    height: 120,           // Increased from 90 to 120 for larger cards
     borderRadius: 25,
     overflow: 'hidden',
-    elevation: 5,
+    elevation: 6,          // Slightly increased elevation for more prominence
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
   },
   itemGradient: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
+    paddingHorizontal: 20, // Increased horizontal padding inside cards
   },
-  // Number bubble styling
-  numberBubbleContainer: {
+  // Icon bubble styling - replaced number with icon
+  iconBubbleContainer: {
     position: 'absolute',
-    right: 20,
+    right: 25,           // Adjusted position
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  numberBubble: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  iconBubble: {
+    width: 60,           // Increased from 50 to 60
+    height: 60,          // Increased from 50 to 60
+    borderRadius: 30,    // Increased to match width/height
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -304,50 +288,22 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
-  numberText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  // Card content styling
+  // Card content styling - simplified
   cardContentContainer: {
     flex: 1,
-    paddingVertical: 15,
-    paddingRight: 60, // Space for the number bubble
+    paddingVertical: 20,   // Increased vertical padding
+    paddingRight: 70,      // Adjusted to accommodate larger icon
   },
   cardTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 20,          // Increased from 18 to 20
     fontWeight: 'bold',
-  },
-  cardSubtitle: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    opacity: 0.8,
     marginBottom: 5,
-  },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 5,
-  },
-  textSection: {
-    flex: 1,
-    marginRight: 10,
   },
   cardDescription: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 14,
     opacity: 0.9,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 5,
   },
   
   // Modal Styles - keeping the original modal styling

@@ -34,7 +34,7 @@ const AddBuilding: React.FC<AddBuildingProps> = ({ onAdd }) => {
       buildingName: buildingName,
     };
 
-    axios.post('https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/create', newBuilding)
+    axios.post('https://vt92g6tf-5050.inc1.devtunnels.ms/api/building/create', newBuilding)
       .then((response) => {
         setAddress('');
         setFlats('');

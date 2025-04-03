@@ -10,7 +10,8 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  TouchableOpacity
+  TouchableOpacity,
+  ImageBackground
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -29,9 +30,8 @@ const MaintenanceScreen: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Use AsyncStorage instead of localStorage
         const token = await AsyncStorage.getItem("token");
-        const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
+        const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setClient(response.data.response || {});
@@ -45,9 +45,6 @@ const MaintenanceScreen: React.FC = () => {
   
   const [bills] = useState([
     { id: "1", type: "Water Bill", amount: 500, status: "Unpaid" },
-    { id: "2", type: "Electricity Bill", amount: 0, status: "Paid" },
-    { id: "3", type: "Gas Bill", amount: 0, status: "Paid" },
-    { id: "4", type: "Internet Bill", amount: 0, status: "Paid" },
     { id: "5", type: "Building Maintenance Bill", amount: 0, status: "Paid" },
     { id: "6", type: "Facility Maintenance Bill", amount: 0, status: "Paid" },
     { id: "7", type: "Equipment Maintenance Bill", amount: 0, status: "Paid" },
@@ -56,14 +53,10 @@ const MaintenanceScreen: React.FC = () => {
   const navigation = useNavigation<MaintenanceScreenNavigationProp>();
 
   const handlePayWithRazorpay = () => {
-    // Direct redirection to Razorpay payment gateway
     Linking.openURL("https://rzp.io/i/example-payment-link"); // Replace with actual Razorpay payment link
   };
 
-  // Check if any bill has an amount greater than 0
   const hasUnpaidBills = bills.some((bill) => bill.amount > 0);
-
-  // Calculate total amount of unpaid bills
   const totalAmountDue = bills.reduce((total, bill) => total + bill.amount, 0);
 
   return (
@@ -71,23 +64,26 @@ const MaintenanceScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerContainer}>
           <Text style={styles.headerTitle}>Billing Dashboard</Text>
+          <View style={styles.headerUnderline} />
         </View>
 
         {/* Client Information */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Client Information</Text>
-          <View style={styles.table}>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableHeader}>Name:</Text>
-              <Text style={styles.tableData}>{client?.name || 'Not available'}</Text>
+          <View style={styles.clientInfoContainer}>
+            <View style={styles.clientInfoItem}>
+              <Text style={styles.clientInfoLabel}>Name</Text>
+              <Text style={styles.clientInfoValue}>{client?.name || 'Not available'}</Text>
             </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableHeader}>House Number:</Text>
-              <Text style={styles.tableData}>{client?.houseNumber || 'Not available'}</Text>
+            <View style={styles.clientInfoSeparator} />
+            <View style={styles.clientInfoItem}>
+              <Text style={styles.clientInfoLabel}>House Number</Text>
+              <Text style={styles.clientInfoValue}>{client?.houseNumber || 'Not available'}</Text>
             </View>
-            <View style={styles.tableRow}>
-              <Text style={styles.tableHeader}>Phone Number:</Text>
-              <Text style={styles.tableData}>{client?.phoneNumber || 'Not available'}</Text>
+            <View style={styles.clientInfoSeparator} />
+            <View style={styles.clientInfoItem}>
+              <Text style={styles.clientInfoLabel}>Phone Number</Text>
+              <Text style={styles.clientInfoValue}>{client?.phoneNumber || 'Not available'}</Text>
             </View>
           </View>
         </View>
@@ -107,19 +103,26 @@ const MaintenanceScreen: React.FC = () => {
               {bills.map((bill, index) => (
                 <View 
                   key={bill.id} 
-                  style={[
+                  style={[ 
                     styles.billTableRow,
                     index % 2 === 0 ? styles.evenRow : styles.oddRow,
                     index === bills.length - 1 ? styles.lastRow : null
                   ]}
                 >
                   <Text style={styles.billType}>{bill.type}</Text>
-                  <Text style={[
-                    styles.billAmount,
-                    bill.amount > 0 ? styles.unpaidAmount : styles.paidAmount
-                  ]}>
-                    ₹{bill.amount}
-                  </Text>
+                  <View style={styles.amountContainer}>
+                    <Text style={[ 
+                      styles.billAmount, 
+                      bill.amount > 0 ? styles.unpaidAmount : styles.paidAmount
+                    ]}>
+                      ₹{bill.amount}
+                    </Text>
+                    {bill.amount === 0 && (
+                      <View style={styles.paidBadge}>
+                        <Text style={styles.paidBadgeText}>PAID</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               ))}
             </View>
@@ -129,12 +132,15 @@ const MaintenanceScreen: React.FC = () => {
           <View style={styles.footer}>
             {hasUnpaidBills ? (
               <>
-                <Text style={styles.totalAmountText}>Total Amount Due: ₹{totalAmountDue}</Text>
+                <View style={styles.totalAmountContainer}>
+                  <Text style={styles.totalAmountLabel}>Total Amount Due:</Text>
+                  <Text style={styles.totalAmountValue}>₹{totalAmountDue}</Text>
+                </View>
                 <TouchableOpacity
                   style={styles.paymentButton}
                   onPress={handlePayWithRazorpay}
                 >
-                  <Text style={styles.paymentButtonText}>Pay with Razorpay</Text>
+                  <Text style={styles.paymentButtonText}>Pay Now</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -149,18 +155,22 @@ const MaintenanceScreen: React.FC = () => {
   );
 };
 
-// Updated Styles
+// Enhanced Blue Color Scheme
 const Colors = {
-  primary: "#3282B8",
-  secondary: "#BBE1FA",
-  background: "#F5F7FA",
-  text: "#1B262C",
-  border: "#DFE6ED",
-  success: "#2ECC71",
-  unpaid: "#E74C3C",
-  white: "#FFFFFF",
-  lightGray: "#F0F2F5",
-  mediumGray: "#E0E4E8",
+  primary: "#1A73E8", // Google Blue
+  primaryDark: "#0D47A1", // Darker blue for accents
+  primaryLight: "#BBDEFB", // Light blue for backgrounds
+  secondary: "#2196F3", // Slightly different blue
+  background: "#EBF5FB", // Very light blue background
+  card: "#FFFFFF", // White for cards
+  text: "#202124", // Dark gray for main text
+  textSecondary: "#5F6368", // Secondary text color
+  border: "#E1E3E6", // Light gray border
+  success: "#0F9D58", // Google Green
+  unpaid: "#EA4335", // Google Red
+  white: "#FFFFFF", // White
+  lightBlue: "#E3F2FD", // Light blue for alternating rows
+  mediumBlue: "#90CAF9", // Medium blue
 };
 
 const styles = StyleSheet.create({
@@ -175,90 +185,103 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     backgroundColor: Colors.primary,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    padding: 24,
+    borderRadius: 20,
+    marginBottom: 30,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 34,
+    fontWeight: "700",
     color: Colors.white,
     textAlign: "center",
   },
-  card: {
+  headerUnderline: {
+    height: 3,
+    width: 60,
     backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    marginTop: 10,
+    borderRadius: 2,
+  },
+  card: {
+    backgroundColor: Colors.card,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 24,
+    fontWeight: "700",
     color: Colors.primary,
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  table: {
-    borderRadius: 8,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.border,
+  clientInfoContainer: {
+    backgroundColor: Colors.lightBlue,
+    borderRadius: 16,
+    padding: 16,
   },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    backgroundColor: Colors.white,
+  clientInfoItem: {
+    paddingVertical: 12,
   },
-  tableHeader: {
-    fontSize: 16,
+  clientInfoLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 4,
     fontWeight: "500",
-    width: "40%",
-    padding: 12,
-    backgroundColor: Colors.lightGray,
+  },
+  clientInfoValue: {
+    fontSize: 18,
+    fontWeight: "600",
     color: Colors.text,
   },
-  tableData: {
-    fontSize: 16,
-    width: "60%",
-    padding: 12,
-    color: Colors.text,
+  clientInfoSeparator: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 4,
   },
   billTableContainer: {
-    borderRadius: 8,
+    borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: Colors.border,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   billTableHeader: {
     flexDirection: "row",
     backgroundColor: Colors.primary,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   billTypeHeader: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
     textAlign: "left",
     width: "60%",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     color: Colors.white,
   },
   billAmountHeader: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
     textAlign: "right",
     width: "40%",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     color: Colors.white,
   },
   billTableBody: {
@@ -268,12 +291,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    paddingVertical: 16,
+    alignItems: "center",
   },
   evenRow: {
-    backgroundColor: Colors.lightGray,
+    backgroundColor: Colors.lightBlue,
   },
   oddRow: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.card,
   },
   lastRow: {
     borderBottomWidth: 0,
@@ -281,17 +306,20 @@ const styles = StyleSheet.create({
   billType: {
     fontSize: 16,
     width: "60%",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingLeft: 20,
     color: Colors.text,
+    fontWeight: "500",
+  },
+  amountContainer: {
+    width: "40%",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingRight: 20,
   },
   billAmount: {
     fontSize: 16,
-    width: "40%",
-    textAlign: "right",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   unpaidAmount: {
     color: Colors.unpaid,
@@ -299,39 +327,73 @@ const styles = StyleSheet.create({
   paidAmount: {
     color: Colors.success,
   },
+  paidBadge: {
+    backgroundColor: Colors.success,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  paidBadgeText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontWeight: "700",
+  },
   footer: {
-    marginTop: 16,
+    marginTop: 28,
     alignItems: "center",
   },
-  totalAmountText: {
+  totalAmountContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  totalAmountLabel: {
     fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: Colors.text,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    marginRight: 8,
+  },
+  totalAmountValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: Colors.primaryDark,
   },
   paymentButton: {
     backgroundColor: Colors.primary,
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    width: "80%",
     alignItems: "center",
-    borderRadius: 8,
-    width: "100%",
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   paymentButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     color: Colors.white,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   paidButtonContainer: {
     backgroundColor: Colors.success,
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    width: "80%",
     alignItems: "center",
-    borderRadius: 8,
-    width: "100%",
     marginTop: 10,
+    shadowColor: "#0A7D46",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   paidText: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "700",
     color: Colors.white,
   },
 });

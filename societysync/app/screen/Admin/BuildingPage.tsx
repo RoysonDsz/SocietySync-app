@@ -7,6 +7,7 @@ import axios from 'axios';
 
 const BuildingPage = ({ route, navigation }:any) => {
   const { building } = route.params;
+  const [buildingNumber,setbuildingNumber] = useState('');
   const [buildingData, setBuildingData] = useState([]);
   const handleBlockPress = (block:any) => {
     navigation.navigate('ResidentList', { 
@@ -16,9 +17,9 @@ const BuildingPage = ({ route, navigation }:any) => {
   };
   const getBuildingDetails = async () => {
     try {
-      const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/building/${building}`);
+      const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/building/${building}`);
       // Handle the response data as needed
-      console.log(response)
+      setbuildingNumber(response.data.buildingNumber);
       setBuildingData(response.data);
     }
     catch (error) { 
@@ -30,7 +31,7 @@ const BuildingPage = ({ route, navigation }:any) => {
     getBuildingDetails();
     },[]);
   const handleViewVisitorLogs = () => {
-    navigation.navigate('VisitorLogs', { building });
+    navigation.navigate('VisitorLogs', { buildingNumber });
   };
 
   const handleSendNotifications = () => {

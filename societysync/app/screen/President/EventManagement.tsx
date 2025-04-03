@@ -175,7 +175,7 @@ const EventManagement: React.FC = () => {
   const fetchBookings = async () => {
     // Simulate API call with a delay
     try {
-    const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/event/getAll-event'); // Replace with actual API endpoint
+    const response = await axios.get('https://vt92g6tf-5050.inc1.devtunnels.ms/api/event/getAll-event'); // Replace with actual API endpoint
     const mockBookings = response.data;
     
     setTimeout(() => {

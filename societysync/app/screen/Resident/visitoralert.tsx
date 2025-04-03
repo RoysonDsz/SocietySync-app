@@ -10,26 +10,26 @@ import {
 } from "react-native";
 
 const VisitorAlert: React.FC = () => {
-  const [buildingNumber, setBuildingNumber] = useState("");
+  const [FlatNumber, setFlatNumber] = useState("");
   const [visitorName, setVisitorName] = useState("");
   const [visitTime, setVisitTime] = useState("");
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const handleSubmit = async () => {
-    if (buildingNumber.trim() === "" || visitorName.trim() === "" || visitTime.trim() === "") {
+    if (FlatNumber.trim() === "" || visitorName.trim() === "" || visitTime.trim() === "") {
       alert("Please fill in all fields.");
       return;
     }
 
     const notificationData = {
-      buildingNumber,
+      FlatNumber,
       visitorName,
       visitTime,
     };
 
     try {
-      const response = await fetch('https://mrnzp03x-5050.inc1.devtunnels.ms/api/alert/visitor', {
+      const response = await fetch('https://vt92g6tf-5050.inc1.devtunnels.ms/api/alert/visitor', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ const VisitorAlert: React.FC = () => {
       }).start(() => fadeAnim.setValue(0));
 
       // Clear input fields
-      setBuildingNumber("");
+      setFlatNumber("");
       setVisitorName("");
       setVisitTime("");
     } catch (error) {
@@ -72,9 +72,9 @@ const VisitorAlert: React.FC = () => {
 
       <TextInput
         style={styles.input}
-        placeholder="Building/Flat Number"
-        value={buildingNumber}
-        onChangeText={setBuildingNumber}
+        placeholder="Flat Number"
+        value={FlatNumber}
+        onChangeText={setFlatNumber}
       />
 
       <TextInput

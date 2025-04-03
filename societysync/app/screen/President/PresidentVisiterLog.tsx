@@ -44,7 +44,7 @@ const PresidentVisitorLog: React.FC = () => {
 
   const getVisitorLog = async() => {
     try {
-      const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/visitor/get-visitor');
+      const response = await axios.get('https://vt92g6tf-5050.inc1.devtunnels.ms/api/visitor/get-visitor');
       setVisitors(response.data.response);
     } catch (error) {
       console.log(error);

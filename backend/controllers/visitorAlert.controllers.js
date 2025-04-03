@@ -3,8 +3,8 @@ import Visitor from '../models/visitorAlert.model.js';
 // Create a new visitor alert
 export const createVisitor = async (req, res) => {
   try {
-    const { buildingNumber, visitorName, visitTime } = req.body;
-    const newVisitor = new Visitor({ buildingNumber, visitorName, visitTime });
+    const { FlatNumber, visitorName, visitTime } = req.body;
+    const newVisitor = new Visitor({ FlatNumber, visitorName, visitTime });
     await newVisitor.save();
     res.status(201).json(newVisitor);
   } catch (error) {
@@ -38,9 +38,9 @@ export const getVisitorById = async (req, res) => {
 // Update a visitor alert by ID
 export const updateVisitor = async (req, res) => {
   try {
-    const { buildingNumber, visitorName, visitTime } = req.body;
+    const { FlatNumber, visitorName, visitTime } = req.body;
     const visitor = await Visitor.findByIdAndUpdate(req.params.id, {
-      buildingNumber,
+      FlatNumber,
       visitorName,
       visitTime,
     }, { new: true });

@@ -104,7 +104,7 @@ const LoginScreen: React.FC = () => {
 
     // Here you would typically authenticate the user
     try {
-    const response = await axios.post('https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/login', {
+    const response = await axios.post('https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/login', {
       email,
       password,
     });

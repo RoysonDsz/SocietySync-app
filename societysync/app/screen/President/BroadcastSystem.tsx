@@ -44,7 +44,7 @@ const BroadcastSystem: React.FC<{ presidentName?: string }> = ({
 
   useEffect(() => {
     // Fetch residents from backend based on current building ID
-    axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/users`)
+    axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/users`)
       .then(response => {
         setResidents(response.data);
         setLoadingResidents(false); // Stop loading once residents are fetched
@@ -55,7 +55,7 @@ const BroadcastSystem: React.FC<{ presidentName?: string }> = ({
       });
 
     // Fetch notifications when the component is mounted
-    axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/notification/get')
+    axios.get('https://vt92g6tf-5050.inc1.devtunnels.ms/api/notification/get')
       .then(response => {
         setNotifications(response.data.notifications);
       })
@@ -105,7 +105,7 @@ const BroadcastSystem: React.FC<{ presidentName?: string }> = ({
     }
 
     // Send the notification to the backend
-    axios.post('https://mrnzp03x-5050.inc1.devtunnels.ms/api/notification/create', {
+    axios.post('https://vt92g6tf-5050.inc1.devtunnels.ms/api/notification/create', {
       name:presidentName,
       role:'President',
       title: title.trim(),

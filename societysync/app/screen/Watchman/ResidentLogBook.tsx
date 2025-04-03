@@ -1,33 +1,66 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Modal, Linking, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Modal, Linking, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import axios from 'axios';
 
 interface Resident {
-  id: string;
-  name: string;
+  _id: string;
+  residentName: string;
   flatNumber: string;
-  phoneNumber: string;
-  photo: string;
+  buildingName: string;
+  residentNumber: string;
+  residentEmail: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const ResidentLogBook: React.FC = () => {
+interface WatchmanResidentLogBookProps {
+  apiBaseUrl: 'https://vt92g6tf-5050.inc1.devtunnels.ms';  // Base URL for API calls
+}
+
+const WatchmanResidentLogBook: React.FC<WatchmanResidentLogBookProps> = ({ apiBaseUrl }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null);
   const [showResidentModal, setShowResidentModal] = useState(false);
+  const [residents, setResidents] = useState<Resident[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Colors
   const primaryBlue = '#180DC9';
   const primaryCyan = '#06D9E0';
 
-  // Sample resident data
-  const residents: Resident[] = [
-    { id: '1', name: 'John Smith', flatNumber: 'A-101', phoneNumber: '9876543210', photo: 'https://example.com/photo1.jpg' },
-    { id: '2', name: 'Maria Garcia', flatNumber: 'B-205', phoneNumber: '9876543211', photo: 'https://example.com/photo2.jpg' },
-    { id: '3', name: 'Raj Patel', flatNumber: 'C-302', phoneNumber: '9876543212', photo: 'https://example.com/photo3.jpg' },
-    { id: '4', name: 'Sarah Johnson', flatNumber: 'A-103', phoneNumber: '9876543213', photo: 'https://example.com/photo4.jpg' },
-    { id: '5', name: 'Robert Fox', flatNumber: 'D-401', phoneNumber: '9876543214', photo: 'https://example.com/photo5.jpg' },
-  ];
+  // Fetch all residents
+  useEffect(() => {
+    const fetchResidents = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching all residents from:', `${apiBaseUrl}/api/assign/`);
+        
+        // Perform the API request
+        const response = await axios.get(`${apiBaseUrl}/api/assign/`);
+        console.log('API response:', response);  // Log the full response
+
+        // Check if the response contains the expected data
+        if (response.data && response.data.data) {
+          setResidents(response.data.data);  // Set the residents list if valid
+        } else {
+          console.error('Error: Unexpected response structure:', response.data);
+          setError('No residents found or invalid response format.');
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching residents:', err);
+        setError('Failed to load residents. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResidents();
+  }, [apiBaseUrl]);
 
   // Function to call resident
   const callResident = (phoneNumber: string) => {
@@ -36,7 +69,7 @@ const ResidentLogBook: React.FC = () => {
 
   // Function to render each resident item
   const renderResidentItem = ({ item }: { item: Resident }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.listItem}
       onPress={() => {
         setSelectedResident(item);
@@ -50,17 +83,17 @@ const ResidentLogBook: React.FC = () => {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
+          <Text style={styles.avatarText}>{item.residentName.charAt(0)}</Text>
         </LinearGradient>
         <View style={styles.listItemText}>
-          <Text style={styles.listItemTitle}>{item.name}</Text>
+          <Text style={styles.listItemTitle}>{item.residentName}</Text>
           <Text style={styles.listItemSubtitle}>Flat: {item.flatNumber}</Text>
         </View>
       </View>
       <View style={styles.actionButtons}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.iconButtonContainer}
-          onPress={() => callResident(item.phoneNumber)}
+          onPress={() => callResident(item.residentNumber)}
         >
           <LinearGradient
             colors={[primaryBlue, primaryCyan]}
@@ -76,8 +109,8 @@ const ResidentLogBook: React.FC = () => {
   );
 
   // Filter residents based on search query
-  const filteredResidents = residents.filter(resident => 
-    resident.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredResidents = residents.filter(resident =>
+    resident.residentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     resident.flatNumber.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -91,16 +124,16 @@ const ResidentLogBook: React.FC = () => {
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
-          {/* Updated Header with LinearGradient */}
+          {/* Header with LinearGradient */}
           <LinearGradient
             colors={[primaryCyan, primaryBlue]}
             style={styles.headerGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={styles.headerTitle}>Residents LogBook</Text>
+            <Text style={styles.headerTitle}>All Residents</Text>
           </LinearGradient>
-          
+
           {/* Search Bar */}
           <View style={styles.searchContainer}>
             <MaterialCommunityIcons name="magnify" size={20} color="#999" style={styles.searchIcon} />
@@ -118,13 +151,59 @@ const ResidentLogBook: React.FC = () => {
             )}
           </View>
 
-          {/* Resident List */}
-          <FlatList
-            data={filteredResidents}
-            renderItem={renderResidentItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContainer}
-          />
+          {/* Loading or Error State */}
+          {loading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={primaryBlue} />
+              <Text style={styles.loadingText}>Loading residents...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.centerContainer}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={50} color={primaryBlue} />
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => {
+                  setLoading(true);
+                  setError(null);
+                  // Re-trigger the useEffect by changing the key
+                  setTimeout(() => {
+                    const fetchResidents = async () => {
+                      try {
+                        const response = await axios.get(`${apiBaseUrl}/api/assign/`);
+                        setResidents(response.data.data);
+                        setError(null);
+                      } catch (err) {
+                        console.error('Error fetching residents:', err);
+                        setError('Failed to load residents. Please try again later.');
+                      } finally {
+                        setLoading(false);
+                      }
+                    };
+                    fetchResidents();
+                  }, 500);
+                }}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // Resident List
+            <FlatList
+              data={filteredResidents}
+              renderItem={renderResidentItem}
+              keyExtractor={item => item._id}
+              contentContainerStyle={styles.listContainer}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyContainer}>
+                  <MaterialCommunityIcons name="account-search-outline" size={60} color="#cccccc" />
+                  <Text style={styles.emptyText}>
+                    {searchQuery ? "No residents match your search" : "No residents found"}
+                  </Text>
+                </View>
+              )}
+            />
+          )}
 
           {/* Resident Details Modal */}
           <Modal
@@ -149,10 +228,10 @@ const ResidentLogBook: React.FC = () => {
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                     >
-                      <Text style={styles.residentAvatarText}>{selectedResident.name.charAt(0)}</Text>
+                      <Text style={styles.residentAvatarText}>{selectedResident.residentName.charAt(0)}</Text>
                     </LinearGradient>
-                    <Text style={styles.residentName}>{selectedResident.name}</Text>
-                    
+                    <Text style={styles.residentName}>{selectedResident.residentName}</Text>
+
                     <View style={styles.residentDetailsCards}>
                       <View style={styles.contactCard}>
                         <MaterialCommunityIcons name="home" size={22} color="#333" style={styles.contactCardIcon} />
@@ -162,15 +241,20 @@ const ResidentLogBook: React.FC = () => {
                       <View style={styles.contactCard}>
                         <MaterialCommunityIcons name="phone" size={22} color="#333" style={styles.contactCardIcon} />
                         <Text style={styles.contactCardTitle}>Phone Number</Text>
-                        <Text style={styles.contactCardValue}>{selectedResident.phoneNumber}</Text>
+                        <Text style={styles.contactCardValue}>{selectedResident.residentNumber}</Text>
+                      </View>
+                      <View style={styles.contactCard}>
+                        <MaterialCommunityIcons name="email" size={22} color="#333" style={styles.contactCardIcon} />
+                        <Text style={styles.contactCardTitle}>Email</Text>
+                        <Text style={styles.contactCardValue}>{selectedResident.residentEmail}</Text>
                       </View>
                     </View>
-                    
+
                     <View style={styles.residentActions}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.residentActionCard}
                         onPress={() => {
-                          callResident(selectedResident.phoneNumber);
+                          callResident(selectedResident.residentNumber);
                           setShowResidentModal(false);
                         }}
                       >
@@ -199,7 +283,7 @@ const ResidentLogBook: React.FC = () => {
 const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
-    paddingTop: 0, // Remove top padding
+    paddingTop: 0,
   },
   safeArea: {
     flex: 1,
@@ -207,19 +291,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    paddingTop: 0, // Remove top padding
+    paddingTop: 0,
   },
-  // Updated header styles to ensure it extends to the top of the screen
   headerGradient: {
     paddingVertical: 16,
     paddingHorizontal: 24,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 16 : 40, // Adjust for status bar
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 16 : 40,
   },
   headerTitle: {
     fontSize: 22,
-    textAlign:'center',
+    textAlign: 'center',
     fontWeight: 'bold',
-    marginTop:-'20',
     color: '#fff',
   },
   searchContainer: {
@@ -406,6 +488,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#180DC9',
   },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#f44336',
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: "black",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#777',
+    textAlign: 'center',
+  },
 });
 
-export default ResidentLogBook;
+export default WatchmanResidentLogBook;

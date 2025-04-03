@@ -5,7 +5,7 @@ import {
 import axios from 'axios';
 
 const totalSlots = 20;
-const API_BASE_URL = 'https://mrnzp03x-5050.inc1.devtunnels.ms/api/parking';
+const API_BASE_URL = 'https://vt92g6tf-5050.inc1.devtunnels.ms/api/parking';
 
 interface ParkingSlot {
   _id?: string;
@@ -33,7 +33,7 @@ const ParkingSlot: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
+        const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/ownProfile`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
         formData.residentName=response.data.response.name;

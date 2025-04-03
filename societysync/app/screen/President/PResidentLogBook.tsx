@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Modal, Linking, Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Modal, Linking, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface Resident {
   _id: string;
@@ -15,13 +16,17 @@ interface Resident {
   updatedAt: string;
 }
 
+// Primary colors from BroadcastSystem
+const primaryBlue = '#180DC9';
+const primaryCyan = '#06D9E0';
+
 const PResidentLogBook: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedResident, setSelectedResident] = useState<Resident | null>(null);
   const [showResidentModal, setShowResidentModal] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
   const [manageModeIsEdit, setManageModeIsEdit] = useState(false);
-  
+
   const [residentForm, setResidentForm] = useState<Omit<Resident, '_id'>>({
     name: '',
     flatNumber: '',
@@ -41,7 +46,7 @@ const PResidentLogBook: React.FC = () => {
 
   const fetchResidents = async () => {
     try {
-      const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/users');
+      const response = await axios.get('https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/users');
       const residentsData = response.data.filter((user: any) => user.role === 'resident');
       setResidents(residentsData);
     } catch (error) {
@@ -99,9 +104,9 @@ const PResidentLogBook: React.FC = () => {
     }
 
     if (manageModeIsEdit && selectedResident) {
-      const updatedResidents = residents.map(r => 
-        r._id === selectedResident._id 
-          ? { ...r, ...residentForm } 
+      const updatedResidents = residents.map(r =>
+        r._id === selectedResident._id
+          ? { ...r, ...residentForm }
           : r
       );
       setResidents(updatedResidents);
@@ -122,7 +127,7 @@ const PResidentLogBook: React.FC = () => {
       console.error("Delete called with invalid ID");
       return;
     }
-    
+
     Alert.alert(
       'Delete Resident',
       'Are you sure you want to remove this resident?',
@@ -147,7 +152,7 @@ const PResidentLogBook: React.FC = () => {
   };
 
   const renderResidentItem = ({ item }: { item: Resident }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.listItem}
       onPress={() => {
         setSelectedResident(item);
@@ -164,13 +169,13 @@ const PResidentLogBook: React.FC = () => {
         </View>
       </View>
       <View style={styles.actionButtons}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.iconButton, styles.callButton]}
           onPress={() => callResident(item.phoneNumber)}
         >
           <MaterialCommunityIcons name="phone" size={20} color="#000" />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.iconButton, styles.editButton]}
           onPress={() => openEditResidentModal(item)}
         >
@@ -180,258 +185,301 @@ const PResidentLogBook: React.FC = () => {
     </TouchableOpacity>
   );
 
-  const filteredResidents = residents.filter(resident => 
+  const filteredResidents = residents.filter(resident =>
     resident.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     resident.flatNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     resident.buildingName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={20} color="#666" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search residents..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery !== '' && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <MaterialCommunityIcons name="close-circle" size={20} color="#666" />
-            </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity style={styles.addButton} onPress={openAddResidentModal}>
-          <MaterialCommunityIcons name="plus" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      {residents.length === 0 ? (
-        <View style={styles.emptyStateContainer}>
-          <MaterialCommunityIcons name="account-off" size={64} color="#ccc" />
-          <Text style={styles.emptyStateText}>No residents found</Text>
-          <TouchableOpacity style={styles.emptyStateButton} onPress={openAddResidentModal}>
-            <Text style={styles.emptyStateButtonText}>Add Resident</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredResidents}
-          renderItem={renderResidentItem}
-          keyExtractor={item => item._id}
-          contentContainerStyle={styles.listContainer}
-        />
-      )}
-
-      <Modal
-        visible={showResidentModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowResidentModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Resident Details</Text>
-              <TouchableOpacity onPress={() => setShowResidentModal(false)}>
-                <MaterialCommunityIcons name="close" size={24} color="#333" />
-              </TouchableOpacity>
+    <LinearGradient
+      colors={[primaryCyan, primaryBlue]}
+      style={styles.gradientContainer}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <LinearGradient
+            colors={[primaryCyan, primaryBlue]}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Resident Directory</Text>
             </View>
-            {selectedResident && (
-              <View style={styles.residentDetailContainer}>
-                <View style={styles.residentAvatar}>
-                  <Text style={styles.residentAvatarText}>{selectedResident.name.charAt(0)}</Text>
-                </View>
-                <Text style={styles.residentName}>{selectedResident.name}</Text>
-                
-                <View style={styles.residentDetailsCards}>
-                  <View style={styles.contactCard}>
-                    <MaterialCommunityIcons name="home" size={22} color="#333" style={styles.contactCardIcon} />
-                    <Text style={styles.contactCardTitle}>Flat Number</Text>
-                    <Text style={styles.contactCardValue}>{selectedResident.flatNumber}</Text>
-                  </View>
-                  <View style={styles.contactCard}>
-                    <MaterialCommunityIcons name="office-building" size={22} color="#333" style={styles.contactCardIcon} />
-                    <Text style={styles.contactCardTitle}>Building Name</Text>
-                    <Text style={styles.contactCardValue}>{selectedResident.buildingName}</Text>
-                  </View>
-                  <View style={styles.contactCard}>
-                    <MaterialCommunityIcons name="phone" size={22} color="#333" style={styles.contactCardIcon} />
-                    <Text style={styles.contactCardTitle}>Phone Number</Text>
-                    <Text style={styles.contactCardValue}>{selectedResident.phoneNumber}</Text>
-                  </View>
-                  <View style={styles.contactCard}>
-                    <MaterialCommunityIcons name="email" size={22} color="#333" style={styles.contactCardIcon} />
-                    <Text style={styles.contactCardTitle}>Email</Text>
-                    <Text style={styles.contactCardValue}>{selectedResident.email}</Text>
-                  </View>
-                </View>
-                
-                <View style={styles.residentActions}>
-                  <TouchableOpacity 
-                    style={styles.residentActionCard}
-                    onPress={() => {
-                      callResident(selectedResident.phoneNumber);
-                      setShowResidentModal(false);
-                    }}
-                  >
-                    <View style={[styles.residentActionIcon, {backgroundColor: '#e3f2fd'}]}>
-                      <MaterialCommunityIcons name="phone" size={24} color="#1976d2" />
-                    </View>
-                    <Text style={styles.residentActionText}>Call</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.residentActionCard}
-                    onPress={() => {
-                      setShowResidentModal(false);
-                      openEditResidentModal(selectedResident);
-                    }}
-                  >
-                    <View style={[styles.residentActionIcon, {backgroundColor: '#fff9c4'}]}>
-                      <MaterialCommunityIcons name="pencil" size={24} color="#fbc02d" />
-                    </View>
-                    <Text style={styles.residentActionText}>Edit</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.residentActionCard}
-                    onPress={() => deleteResident(selectedResident._id)}
-                  >
-                    <View style={[styles.residentActionIcon, {backgroundColor: '#ffebee'}]}>
-                      <MaterialCommunityIcons name="delete" size={24} color="#c62828" />
-                    </View>
-                    <Text style={styles.residentActionText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+          </LinearGradient>
+        </View>
+
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <MaterialCommunityIcons name="magnify" size={20} color="#666" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search residents..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery !== '' && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <MaterialCommunityIcons name="close-circle" size={20} color="#666" />
+              </TouchableOpacity>
             )}
           </View>
+          <TouchableOpacity style={styles.addButton} onPress={openAddResidentModal}>
+            <MaterialCommunityIcons name="plus" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
-      </Modal>
 
-      <Modal
-        visible={showManageModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowManageModal(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
+        {residents.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <MaterialCommunityIcons name="account-off" size={64} color="#ccc" />
+            <Text style={styles.emptyStateText}>No residents found</Text>
+            <TouchableOpacity style={styles.emptyStateButton} onPress={openAddResidentModal}>
+              <Text style={styles.emptyStateButtonText}>Add Resident</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredResidents}
+            renderItem={renderResidentItem}
+            keyExtractor={item => item._id}
+            contentContainerStyle={styles.listContainer}
+          />
+        )}
+
+        <Modal
+          visible={showResidentModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowResidentModal(false)}
         >
-          <ScrollView contentContainerStyle={styles.modalScrollView}>
+          <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  {manageModeIsEdit ? 'Edit Resident' : 'Add New Resident'}
-                </Text>
-                <TouchableOpacity onPress={() => setShowManageModal(false)}>
+                <Text style={styles.modalTitle}>Resident Details</Text>
+                <TouchableOpacity onPress={() => setShowResidentModal(false)}>
                   <MaterialCommunityIcons name="close" size={24} color="#333" />
                 </TouchableOpacity>
               </View>
-              
-              <View style={styles.formContainer}>
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Name *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder="Enter resident name"
-                    value={residentForm.name}
-                    onChangeText={(value) => handleFormChange('name', value)}
-                  />
+              {selectedResident && (
+                <View style={styles.residentDetailContainer}>
+                  <View style={styles.residentAvatar}>
+                    <Text style={styles.residentAvatarText}>{selectedResident.name.charAt(0)}</Text>
+                  </View>
+                  <Text style={styles.residentName}>{selectedResident.name}</Text>
+
+                  <View style={styles.residentDetailsCards}>
+                    <View style={styles.contactCard}>
+                      <MaterialCommunityIcons name="home" size={22} color={primaryBlue} style={styles.contactCardIcon} />
+                      <Text style={styles.contactCardTitle}>Flat Number</Text>
+                      <Text style={styles.contactCardValue}>{selectedResident.flatNumber}</Text>
+                    </View>
+                    <View style={styles.contactCard}>
+                      <MaterialCommunityIcons name="office-building" size={22} color={primaryBlue} style={styles.contactCardIcon} />
+                      <Text style={styles.contactCardTitle}>Building Name</Text>
+                      <Text style={styles.contactCardValue}>{selectedResident.buildingName}</Text>
+                    </View>
+                    <View style={styles.contactCard}>
+                      <MaterialCommunityIcons name="phone" size={22} color={primaryBlue} style={styles.contactCardIcon} />
+                      <Text style={styles.contactCardTitle}>Phone Number</Text>
+                      <Text style={styles.contactCardValue}>{selectedResident.phoneNumber}</Text>
+                    </View>
+                    <View style={styles.contactCard}>
+                      <MaterialCommunityIcons name="email" size={22} color={primaryBlue} style={styles.contactCardIcon} />
+                      <Text style={styles.contactCardTitle}>Email</Text>
+                      <Text style={styles.contactCardValue}>{selectedResident.email}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.residentActions}>
+                    <TouchableOpacity
+                      style={styles.residentActionCard}
+                      onPress={() => {
+                        callResident(selectedResident.phoneNumber);
+                        setShowResidentModal(false);
+                      }}
+                    >
+                      <View style={[styles.residentActionIcon, { backgroundColor: '#e3f2fd' }]}>
+                        <MaterialCommunityIcons name="phone" size={24} color={primaryBlue} />
+                      </View>
+                      <Text style={styles.residentActionText}>Call</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.residentActionCard}
+                      onPress={() => {
+                        setShowResidentModal(false);
+                        openEditResidentModal(selectedResident);
+                      }}
+                    >
+                      <View style={[styles.residentActionIcon, { backgroundColor: '#fff9c4' }]}>
+                        <MaterialCommunityIcons name="pencil" size={24} color={primaryBlue} />
+                      </View>
+                      <Text style={styles.residentActionText}>Edit</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.residentActionCard}
+                      onPress={() => deleteResident(selectedResident._id)}
+                    >
+                      <View style={[styles.residentActionIcon, { backgroundColor: '#ffebee' }]}>
+                        <MaterialCommunityIcons name="delete" size={24} color="#c62828" />
+                      </View>
+                      <Text style={styles.residentActionText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Flat Number *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder="e.g. A-101"
-                    value={residentForm.flatNumber}
-                    onChangeText={(value) => handleFormChange('flatNumber', value)}
-                  />
-                </View>
-                
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Building Name *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder="e.g. Building A"
-                    value={residentForm.buildingName}
-                    onChangeText={(value) => handleFormChange('buildingName', value)}
-                  />
-                </View>
-                
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Phone Number *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder="Enter phone number"
-                    value={residentForm.phoneNumber}
-                    onChangeText={(value) => handleFormChange('phoneNumber', value)}
-                    keyboardType="phone-pad"
-                  />
-                </View>
-                
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Email *</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    placeholder="Enter email"
-                    value={residentForm.email}
-                    onChangeText={(value) => handleFormChange('email', value)}
-                    keyboardType="email-address"
-                  />
+              )}
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showManageModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowManageModal(false)}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.modalOverlay}
+          >
+            <ScrollView contentContainerStyle={styles.modalScrollView}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>
+                    {manageModeIsEdit ? 'Edit Resident' : 'Add New Resident'}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowManageModal(false)}>
+                    <MaterialCommunityIcons name="close" size={24} color="#333" />
+                  </TouchableOpacity>
                 </View>
 
-                <View style={styles.formActions}>
-                  <TouchableOpacity
-                    style={[styles.formButton, styles.cancelButton]}
-                    onPress={() => setShowManageModal(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[styles.formButton, styles.saveButton]}
-                    onPress={saveResident}
-                  >
-                    <Text style={styles.saveButtonText}>Save</Text>
-                  </TouchableOpacity>
+                <View style={styles.formContainer}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Name *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Enter resident name"
+                      value={residentForm.name}
+                      onChangeText={(value) => handleFormChange('name', value)}
+                    />
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Flat Number *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="e.g. A-101"
+                      value={residentForm.flatNumber}
+                      onChangeText={(value) => handleFormChange('flatNumber', value)}
+                    />
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Building Name *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="e.g. Building A"
+                      value={residentForm.buildingName}
+                      onChangeText={(value) => handleFormChange('buildingName', value)}
+                    />
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Phone Number *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Enter phone number"
+                      value={residentForm.phoneNumber}
+                      onChangeText={(value) => handleFormChange('phoneNumber', value)}
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Email *</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      placeholder="Enter email"
+                      value={residentForm.email}
+                      onChangeText={(value) => handleFormChange('email', value)}
+                      keyboardType="email-address"
+                    />
+                  </View>
+
+                  <View style={styles.formActions}>
+                    <TouchableOpacity
+                      style={[styles.formButton, styles.cancelButton]}
+                      onPress={() => setShowManageModal(false)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.formButton, styles.saveButton]}
+                      onPress={saveResident}
+                    >
+                      <Text style={styles.saveButtonText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
-    </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </Modal>
+      </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
   },
   headerContainer: {
+    elevation: 4,
+  },
+  headerGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginTop: 12,
-    marginBottom: 12,
+    paddingVertical: 16,
   },
-  searchContainer: {
+  searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
     paddingHorizontal: 16,
     borderRadius: 12,
     height: 48,
     marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 2,
   },
   searchIcon: {
     marginRight: 12,
@@ -445,7 +493,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#1976d2',
+    backgroundColor: primaryBlue,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -471,7 +519,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyStateButton: {
-    backgroundColor: '#1976d2',
+    backgroundColor: primaryBlue,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -485,8 +533,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: '#e3f2fd',
-    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -503,7 +551,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#cfd8dc',
+    backgroundColor: 'rgba(6, 217, 224, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -511,7 +559,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: primaryBlue,
   },
   listItemText: {
     flex: 1,
@@ -537,13 +585,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(6, 217, 224, 0.1)',
   },
   callButton: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(6, 217, 224, 0.2)',
   },
   editButton: {
-    backgroundColor: '#fff9c4',
+    backgroundColor: 'rgba(24, 13, 201, 0.1)',
   },
   modalOverlay: {
     flex: 1,
@@ -572,6 +620,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '600',
+    color: primaryBlue,
   },
   residentDetailContainer: {
     alignItems: 'center',
@@ -581,7 +630,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#cfd8dc',
+    backgroundColor: 'rgba(6, 217, 224, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -589,7 +638,7 @@ const styles = StyleSheet.create({
   residentAvatarText: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#000',
+    color: primaryBlue,
   },
   residentName: {
     fontSize: 24,
@@ -643,6 +692,7 @@ const styles = StyleSheet.create({
   residentActionText: {
     fontSize: 16,
     fontWeight: '600',
+    color: primaryBlue,
   },
   formContainer: {
     width: '100%',
@@ -674,7 +724,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButton: {
-    backgroundColor: '#1976d2',
+    backgroundColor: primaryBlue,
   },
   saveButtonText: {
     color: '#fff',
@@ -683,6 +733,8 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   cancelButtonText: {
     color: '#333',

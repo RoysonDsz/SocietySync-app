@@ -24,7 +24,7 @@ const EventList: React.FC = () => {
 
   const getAllEvents = async () => {
     try {
-      const response = await axios.get(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/event/getAll-event`);
+      const response = await axios.get(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/event/getAll-event`);
       const transformedData = response.data.map((event: any) => ({
         id: event._id,
         name: event.purpose,
@@ -44,7 +44,7 @@ const EventList: React.FC = () => {
     const confirm = window.confirm("Do you want to Delete");
     if (confirm) {
       try {
-        await axios.delete(`https://mrnzp03x-5050.inc1.devtunnels.ms/api/event/delete-event/${id}`);
+        await axios.delete(`https://vt92g6tf-5050.inc1.devtunnels.ms/api/event/delete-event/${id}`);
         getAllEvents();
       } catch (error) {
         console.log(error);

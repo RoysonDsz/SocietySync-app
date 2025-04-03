@@ -41,7 +41,7 @@ const PResidentLogBook: React.FC = () => {
 
   const fetchResidents = async () => {
     try {
-      const response = await axios.get('https://mrnzp03x-5050.inc1.devtunnels.ms/api/user/users');
+      const response = await axios.get('https://vt92g6tf-5050.inc1.devtunnels.ms/api/user/users');
       const residentsData = response.data.filter((user: any) => user.role === 'resident');
       setResidents(residentsData);
     } catch (error) {
