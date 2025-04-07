@@ -13,6 +13,11 @@ const assignSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    role: {
+        type: String,
+        enum: ['resident', 'admin', 'president', 'watchman'],
+        default: 'resident',
+      },
     residentNumber: {
         type: String,
         required: true

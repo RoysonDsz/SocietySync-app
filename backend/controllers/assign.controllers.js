@@ -67,7 +67,7 @@ const getAllResidents = async (req, res) => {
         res.status(200).json({
             success: true,
             count: residents.length,
-            data: residents
+            residents
         });
     } catch (error) {
         errorResponse(res, 500, "Server error fetching residents");

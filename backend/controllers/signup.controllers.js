@@ -8,9 +8,9 @@ const secretKey = process.env.JWT_SECRET;
 
 const signup = async (req, res) => {
   try {
-    const { name, email, password, phoneNumber } = req.body;
+    const { name, email,  buildingName,password, phoneNumber } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new signupModel({ name, role : 'resident', email, password: hashedPassword, phoneNumber });
+    const user = new signupModel({ name, role : 'resident', email,  buildingName,password: hashedPassword, phoneNumber });
     await user.save();
     res.status(201).send({ message: 'User registered successfully' });
   } catch (error) {

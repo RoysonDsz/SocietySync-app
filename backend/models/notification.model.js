@@ -16,11 +16,14 @@ const notificationSchema = new mongoose.Schema({
       required: true,
       trim: true,
     },
+
     message: {
       type: String,
       required: true,
       trim: true,
     },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
   }, {
     timestamps: true,
   });
@@ -29,3 +32,6 @@ const notificationSchema = new mongoose.Schema({
 
 
   export default notificationModel;
+
+
+
