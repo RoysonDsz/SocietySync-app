@@ -22,12 +22,12 @@ A full-stack mobile app designed to manage and streamline tasks for residential 
 
 1. **Maintenance Requests**:
    - Users can easily submit maintenance requests and track their status.
-   - ![Home Page](https://drive.google.com/uc?export=view&id=1pxExYLNnIOhmWzF2Izisjw0K4LfcZ0uM)  
+     ![Home Page](https://drive.google.com/uc?export=view&id=1pxExYLNnIOhmWzF2Izisjw0K4LfcZ0uM)  
     
 2. **Bill Management**:
    - Residents can view and pay their bills within the app.
-   - ![Billing Dashboard](https://drive.google.com/uc?export=view&id=1gx_83sgzxSzJUoUjIy3N4zubpj2fkREs)  
+     ![Billing Dashboard](https://drive.google.com/uc?export=view&id=1gx_83sgzxSzJUoUjIy3N4zubpj2fkREs)  
 
 3. **Visitor Management**:
    - Streamlined visitor registration for easy entry into the premises.
-   - ![Inside Features](https://drive.google.com/uc?export=view&id=11F3ClTlRsZ4laqNA1xeinf2A3oSvohYc)  
+     ![Inside Features](https://drive.google.com/uc?export=view&id=11F3ClTlRsZ4laqNA1xeinf2A3oSvohYc)  
